@@ -322,6 +322,7 @@ function showRefund(ticketId) {
 
 function confirmRefund(ticketId, refundAmt) {
   Store.updateTrainTicket(ticketId, { status:'已取消', canRefund:false, canChange:false, canTransfer:false });
+  Store.decrementTicketPurchaseCount();
   closeModal('modal-refund');
   renderTickets();
   showToast(`退票申請已送出，將退回 ${Utils.formatCurrency(refundAmt)}`, 'success');

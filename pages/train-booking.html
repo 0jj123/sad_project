@@ -314,14 +314,23 @@ function doPay() {
     itineraryId: null,
   };
   Store.addTrainTicket(newTicket);
+  const pointsEarned = Store.incrementTicketPurchaseCount();
   window._newTicket = newTicket;
+  window._pointsEarned = pointsEarned;
   goStep(4);
   showToast('訂票成功！電子票券已產生', 'success');
+  if (pointsEarned > 0) {
+    setTimeout(() => showToast(`🎉 累積購票滿 5 次，獲得 ${pointsEarned} 點！`, 'success'), 800);
+  }
 }
 
 function renderTicketPreview() {
   const t = window._newTicket;
   if (!t) return;
+  const pts = Store.getPoints();
+  const count = Store.getTicketPurchaseCount();
+  const toNext = 5 - (count % 5);
+  document.getElementById('nav-points').textContent = `⭐ ${pts.toLocaleString()} 點`;
   document.getElementById('ticket-preview').innerHTML = `
     <div style="text-align:left;">
       <div class="fw-700" style="font-size:16px;margin-bottom:12px;">🎫 電子乘車憑證</div>
@@ -339,6 +348,10 @@ function renderTicketPreview() {
         </div>
       </div>
       <div class="text-xs text-muted text-center mt-3">${t.qrCode}</div>
+      <div style="margin-top:16px;background:var(--surface-warm);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;">
+        <div class="text-sm">⭐ 目前點數：<span class="fw-700 text-primary">${pts.toLocaleString()} 點</span></div>
+        <div class="text-xs text-muted mt-1">累積購票進度 ${count % 5}/5，再買 ${toNext} 次可獲得 30 點</div>
+      </div>
     </div>`;
   genQR();
 }

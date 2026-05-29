@@ -292,6 +292,17 @@ function renderPage() {
                 <button class="pay-btn" onclick="setPayMethod('銀行轉帳',this)">🏦 銀行轉帳</button>
               </div>
             </div>
+            <div class="form-group" id="points-section" style="display:none;">
+              <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>⭐ 點數折抵</span>
+                <span class="text-muted text-xs" id="points-avail-label"></span>
+              </label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input class="form-control" id="bk-points" type="number" min="0" value="0" placeholder="0" oninput="calcPrice()">
+                <span class="text-sm text-muted" style="white-space:nowrap;">點（最多 <span id="max-points-label">0</span> 點）</span>
+              </div>
+              <div class="text-xs text-muted mt-1">1 點折抵 NT$1</div>
+            </div>
           </div>
         </div>
         <div class="card-footer">
@@ -334,15 +345,29 @@ function calcPrice() {
   const nights = Utils.daysBetween(ci,co);
   if (nights<=0) { document.getElementById('price-breakdown-widget').innerHTML='<div class="text-danger text-sm">退房日期需晚於入住日期</div>'; return; }
   const subtotal = selectedRoom.price * nights;
-  const discount = 0;
-  const total = subtotal - discount;
+
+  const availPoints = Store.getPoints();
+  const maxPoints = Math.min(availPoints, subtotal);
+  const ptsSec = document.getElementById('points-section');
+  if (ptsSec) {
+    ptsSec.style.display = '';
+    document.getElementById('points-avail-label').textContent = `可用 ${availPoints.toLocaleString()} 點`;
+    document.getElementById('max-points-label').textContent = maxPoints.toLocaleString();
+    const ptsInput = document.getElementById('bk-points');
+    ptsInput.max = maxPoints;
+    if (parseInt(ptsInput.value) > maxPoints) ptsInput.value = maxPoints;
+  }
+
+  let pointsUsed = Math.max(0, Math.min(parseInt(document.getElementById('bk-points')?.value)||0, maxPoints));
+  const total = subtotal - pointsUsed;
+
   document.getElementById('price-breakdown-widget').innerHTML = `
     <div class="price-breakdown">
       <div class="price-row"><span>${Utils.formatCurrency(selectedRoom.price)} × ${nights} 晚</span><span>${Utils.formatCurrency(subtotal)}</span></div>
-      ${discount?`<div class="price-row text-success"><span>優惠折扣</span><span>-${Utils.formatCurrency(discount)}</span></div>`:''}
+      ${pointsUsed>0?`<div class="price-row" style="color:var(--success);"><span>⭐ 點數折抵</span><span>-${Utils.formatCurrency(pointsUsed)}</span></div>`:''}
       <div class="price-row total"><span>總計</span><span style="color:var(--primary);">${Utils.formatCurrency(total)}</span></div>
     </div>`;
-  return { nights, subtotal, discount, total };
+  return { nights, subtotal, pointsUsed, total };
 }
 
 function bookRoom() {
@@ -355,7 +380,10 @@ function bookRoom() {
   if (nights<=0) { showToast('退房日期需晚於入住日期','error'); return; }
   if (selectedRoom.available<=0) { showToast('此房型已售完','error'); return; }
 
-  const total = selectedRoom.price * nights;
+  const subtotal = selectedRoom.price * nights;
+  const availPoints = Store.getPoints();
+  let pointsUsed = Math.max(0, Math.min(parseInt(document.getElementById('bk-points')?.value)||0, availPoints, subtotal));
+  const total = subtotal - pointsUsed;
   document.getElementById('book-summary').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div class="flex justify-between text-sm"><span class="text-muted">住宿名稱</span><span class="fw-500">${hotel.name}</span></div>
@@ -364,32 +392,36 @@ function bookRoom() {
       <div class="flex justify-between text-sm"><span class="text-muted">退房</span><span class="fw-500">${co}</span></div>
       <div class="flex justify-between text-sm"><span class="text-muted">人數</span><span class="fw-500">${guests} 人</span></div>
       <div class="flex justify-between text-sm"><span class="text-muted">付款方式</span><span class="fw-500">${selectedPayMethod}</span></div>
+      ${pointsUsed>0?`<div class="flex justify-between text-sm" style="color:var(--success);"><span>⭐ 點數折抵</span><span>-${Utils.formatCurrency(pointsUsed)}</span></div>`:''}
       <div class="divider" style="margin:4px 0;"></div>
       <div class="flex justify-between fw-700 text-lg"><span>總金額</span><span style="color:var(--primary);">${Utils.formatCurrency(total)}</span></div>
     </div>`;
-  window._pendingOrder = { ci, co, guests:parseInt(guests), nights, total };
+  window._pendingOrder = { ci, co, guests:parseInt(guests), nights, subtotal, pointsUsed, total };
   openModal('modal-book');
 }
 
 function confirmBook() {
   const o = window._pendingOrder;
   if (!o) return;
+  if (o.pointsUsed > 0) Store.usePoints(o.pointsUsed);
   const order = {
     id: Utils.genId('ho'),
     hotelId: hotel.id, roomId: selectedRoom.id,
     userId: CURRENT_USER.id,
     checkIn: o.ci, checkOut: o.co, guests: o.guests, nights: o.nights,
     roomName: selectedRoom.name, hotelName: hotel.name,
-    roomPrice: selectedRoom.price, discount: 0, totalAmount: o.total,
+    roomPrice: selectedRoom.price, discount: o.pointsUsed, totalAmount: o.total,
     status: '已付款', payMethod: selectedPayMethod,
     paidAt: new Date().toLocaleString('zh-TW').replace(/\//g,'-'),
     itineraryId: null,
   };
   Store.addHousingOrder(order);
   closeModal('modal-book');
+  document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
   document.getElementById('paid-summary').innerHTML = `
     <div class="fw-600 mb-2">${hotel.name}</div>
     <div class="text-sm text-sub">${selectedRoom.name} ・ ${o.ci} ~ ${o.co}</div>
+    ${o.pointsUsed>0?`<div class="text-sm" style="color:var(--success);">⭐ 使用 ${o.pointsUsed.toLocaleString()} 點折抵</div>`:''}
     <div class="text-sm fw-700 text-success mt-2">已付款：${Utils.formatCurrency(o.total)}</div>`;
   openModal('modal-paid');
   showToast('訂房成功！確認信已寄出', 'success');

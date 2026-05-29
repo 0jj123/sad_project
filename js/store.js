@@ -21,7 +21,7 @@ const Store = {
   },
 
   reset() {
-    ['itineraries','housing_orders','train_tickets','favorites','cart','user_points','initialized']
+    ['itineraries','housing_orders','train_tickets','favorites','cart','user_points','ticket_purchase_count','initialized']
       .forEach(k => localStorage.removeItem('agenttt_' + k));
     this.init();
   },
@@ -102,5 +102,18 @@ const Store = {
     if (p < n) return false;
     this._set('user_points', p - n);
     return true;
+  },
+
+  /* Ticket Purchase Count（滿5次贈30點，退票不計） */
+  getTicketPurchaseCount() { return this._get('ticket_purchase_count') || 0; },
+  incrementTicketPurchaseCount() {
+    const count = this.getTicketPurchaseCount() + 1;
+    this._set('ticket_purchase_count', count);
+    if (count % 5 === 0) { this.addPoints(30); return 30; }
+    return 0;
+  },
+  decrementTicketPurchaseCount() {
+    const count = Math.max(0, this.getTicketPurchaseCount() - 1);
+    this._set('ticket_purchase_count', count);
   },
 };
