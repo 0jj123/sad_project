@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Agent TT 智慧旅遊平台</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.hero{background:linear-gradient(135deg,#FDF0E0 0%,#FFF3E8 50%,#FEEEE0 100%);padding:64px 0 56px;text-align:center;border-bottom:1px solid var(--border);}
+.hero-title{font-size:42px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:12px;}
+.hero-title span{color:var(--primary);}
+.hero-sub{font-size:16px;color:var(--text-muted);margin-bottom:32px;}
+.module-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px;}
+.module-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px 24px;text-align:center;cursor:pointer;transition:var(--t);text-decoration:none;display:block;}
+.module-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px);border-color:var(--primary-light);}
+.module-icon{font-size:48px;margin-bottom:16px;}
+.module-name{font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.module-desc{font-size:14px;color:var(--text-muted);line-height:1.6;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:40px 0 0;}
+.recent-section{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px;}
+.activity-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-light);}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;}
+.activity-text{font-size:14px;color:var(--text-sub);flex:1;}
+.activity-time{font-size:12px;color:var(--text-muted);}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link active">🏠 首頁</a>
+      <a href="pages/itinerary-list.html" class="nav-link">📅 行程規劃</a>
+      <a href="pages/housing-search.html" class="nav-link">🏨 住宿訂房</a>
+      <a href="pages/train-search.html" class="nav-link">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 1,250 點</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="container">
+      <div class="hero-title">探索<span>竹竹苗</span>台鐵小站之美</div>
+      <p class="hero-sub">整合行程規劃・住宿訂房・台鐵車票，輕鬆開啟山城旅遊新體驗</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="pages/itinerary-list.html" class="btn btn-primary btn-lg">開始規劃行程</a>
+        <a href="pages/train-search.html" class="btn btn-secondary btn-lg">查詢台鐵班次</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="main" style="padding-top:0;">
+  <div class="section">
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-itins">3</div>
+        <div class="stat-label">我的行程</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-tickets">3</div>
+        <div class="stat-label">持有車票</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-orders">2</div>
+        <div class="stat-label">住宿訂單</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-points">1,250</div>
+        <div class="stat-label">平台點數 ⭐</div>
+      </div>
+    </div>
+
+    <!-- Module Cards -->
+    <h2 style="font-size:20px;font-weight:700;margin:48px 0 4px;">三大服務模組</h2>
+    <p class="text-muted text-sm mb-5">一站整合，從規劃到出發全程支援</p>
+    <div class="module-cards">
+      <a href="pages/itinerary-list.html" class="module-card">
+        <div class="module-icon">📅</div>
+        <div class="module-name">行程規劃</div>
+        <div class="module-desc">建立竹竹苗旅遊行程、拖曳排序景點、多人協作與費用分攤</div>
+      </a>
+      <a href="pages/housing-search.html" class="module-card">
+        <div class="module-icon">🏨</div>
+        <div class="module-name">住宿訂房</div>
+        <div class="module-desc">搜尋車站周邊民宿旅館、比較設施評價、線上訂房付款</div>
+      </a>
+      <a href="pages/train-search.html" class="module-card">
+        <div class="module-icon">🚂</div>
+        <div class="module-name">台鐵車票</div>
+        <div class="module-desc">查詢班次即時資訊、線上訂票取票、退票改票分票</div>
+      </a>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-section">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">近期行程</span>
+          <a href="pages/itinerary-list.html" class="text-sm text-primary">查看全部 →</a>
+        </div>
+        <div class="card-body" id="recent-itins"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">近期訂單</span>
+          <a href="pages/housing-orders.html" class="text-sm text-primary">查看全部 →</a>
+        </div>
+        <div class="card-body" id="recent-orders"></div>
+      </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div style="margin-top:48px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;text-align:center;">✨ 平台特色</h3>
+      <div class="grid-3" style="gap:24px;">
+        <div style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">🗺️</div>
+          <div class="fw-600 mb-2">竹竹苗專屬</div>
+          <div class="text-sm text-muted">專注竹竹苗台鐵小站，振興在地觀光</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">👥</div>
+          <div class="fw-600 mb-2">多人協作</div>
+          <div class="text-sm text-muted">邀請旅伴共同編輯行程、投票選景點</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">💰</div>
+          <div class="fw-600 mb-2">費用整合</div>
+          <div class="text-sm text-muted">車票 + 住宿 + 餐飲，一鍵平均分攤</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+  </div>
+</main>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/store.js"></script>
+<script>
+Store.init();
+
+// Stats
+document.getElementById('stat-itins').textContent = Store.getItineraries().length;
+document.getElementById('stat-tickets').textContent = Store.getTrainTickets().length;
+document.getElementById('stat-orders').textContent = Store.getHousingOrders().length;
+const pts = Store.getPoints();
+document.getElementById('stat-points').textContent = pts.toLocaleString();
+document.getElementById('nav-points').textContent = `⭐ ${pts.toLocaleString()} 點`;
+
+// Recent itineraries
+const recentItins = Store.getItineraries().slice(0,3);
+const statusMap = {'規劃中':'badge-info','已完成':'badge-success','已取消':'badge-muted'};
+document.getElementById('recent-itins').innerHTML = recentItins.map(i=>`
+  <div class="activity-item" style="cursor:pointer;" onclick="location.href='pages/itinerary-detail.html?id=${i.id}'">
+    <div class="activity-dot"></div>
+    <div class="activity-text">
+      <span class="fw-500">${i.name}</span>
+      <span class="badge ${statusMap[i.status]||'badge-muted'}" style="margin-left:8px;font-size:11px;">${i.status}</span>
+    </div>
+    <div class="activity-time">${Utils.formatDate(i.startDate)}</div>
+  </div>
+`).join('') || '<div class="text-muted text-sm">尚無行程</div>';
+
+// Recent orders
+const orders = Store.getHousingOrders().slice(0,3);
+const oStatusMap = {'已付款':'badge-success','已完成':'badge-muted','未付款':'badge-warning','取消中':'badge-danger','退款中':'badge-danger'};
+document.getElementById('recent-orders').innerHTML = orders.map(o=>`
+  <div class="activity-item">
+    <div class="activity-dot" style="background:var(--success);"></div>
+    <div class="activity-text">
+      <span class="fw-500">${o.hotelName}</span>
+      <span class="badge ${oStatusMap[o.status]||'badge-muted'}" style="margin-left:8px;font-size:11px;">${o.status}</span>
+    </div>
+    <div class="activity-time">${Utils.formatCurrency(o.totalAmount)}</div>
+  </div>
+`).join('') || '<div class="text-muted text-sm">尚無訂單</div>';
+</script>
+</body>
+</html>

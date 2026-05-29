@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>行程規劃 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.itin-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px;transition:var(--t);cursor:pointer;text-decoration:none;display:block;color:inherit;}
+.itin-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--primary-light);}
+.itin-name{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.itin-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text-muted);}
+.itin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:768px){.itin-grid{grid-template-columns:1fr;}}
+.warning-alert{display:none;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link active">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-header-inner" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1 class="page-title">📅 行程規劃</h1>
+        <p class="page-subtitle">建立你的竹竹苗小站旅遊行程，邀請旅伴共同編輯</p>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="openModal('modal-create')">＋ 新增行程</button>
+    </div>
+  </div>
+
+  <div class="section">
+  <div class="container">
+
+    <!-- Status Filter -->
+    <div class="filter-chips" id="filter-chips">
+      <button class="chip active" data-status="全部">全部</button>
+      <button class="chip" data-status="規劃中">規劃中</button>
+      <button class="chip" data-status="已完成">已完成</button>
+      <button class="chip" data-status="已取消">已取消</button>
+    </div>
+
+    <!-- Itinerary Grid -->
+    <div class="itin-grid" id="itin-grid"></div>
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">目前沒有行程</div>
+      <div class="empty-text">點擊右上角「新增行程」開始規劃你的竹竹苗之旅</div>
+      <button class="btn btn-primary" onclick="openModal('modal-create')">＋ 新增行程</button>
+    </div>
+
+  </div>
+  </div>
+</main>
+</div>
+
+<!-- Modal: 新增行程 -->
+<div class="modal-overlay" id="modal-create">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">新增行程</span>
+      <button class="btn-icon" onclick="closeModal('modal-create')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:20px;">
+        <span class="alert-icon">ℹ</span>
+        <span>起點僅限竹竹苗台鐵車站。加入其他區域景點或車站時，系統將跳出警告提示。</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="form-group">
+          <label class="form-label">行程名稱 *</label>
+          <input class="form-control" id="f-name" placeholder="例：竹苗三日遊" maxlength="50">
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">出發日期 *</label>
+            <input class="form-control" id="f-start" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">天數 *</label>
+            <select class="form-control" id="f-days">
+              <option value="1">1 天</option><option value="2">2 天</option>
+              <option value="3" selected>3 天</option><option value="4">4 天</option>
+              <option value="5">5 天</option><option value="7">7 天</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">起點車站（竹竹苗）*</label>
+          <select class="form-control" id="f-station">
+            <option value="">請選擇車站</option>
+          </select>
+          <div class="alert alert-warning warning-alert" id="station-warning">
+            <span class="alert-icon">⚠</span>
+            <span>此車站不在竹竹苗範圍，無法設為行程起點。</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">預算上限（NT$）</label>
+          <input class="form-control" id="f-budget" type="number" placeholder="例：5000" min="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-create')">取消</button>
+      <button class="btn btn-primary" onclick="createItinerary()">建立行程</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+const statusMap = { '規劃中':'badge-info', '已完成':'badge-success', '已取消':'badge-muted' };
+
+let currentFilter = '全部';
+
+function renderList() {
+  const all = Store.getItineraries();
+  const list = Utils.filterByStatus(all, currentFilter);
+  const grid = document.getElementById('itin-grid');
+  const empty = document.getElementById('empty-state');
+  if (!list.length) { grid.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  grid.innerHTML = list.map(i => {
+    const spent = Utils.calcTotalExpense(i.expenses);
+    const days = Object.values(i.days_items||{}).flat().length;
+    return `
+    <a class="itin-card" href="itinerary-detail.html?id=${i.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div class="itin-name">${i.name}</div>
+        <span class="badge ${statusMap[i.status]||'badge-muted'}">${i.status}</span>
+      </div>
+      <div class="itin-meta">
+        <span>📍 ${Utils.getStationName(i.startStation)}</span>
+        <span>📆 ${Utils.formatDate(i.startDate)}</span>
+        <span>⏱ ${i.days}天</span>
+        <span>🗺 ${days}個景點</span>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--border-light);padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+        <span class="text-sm text-muted">👥 ${1 + (i.collaborators||[]).length} 人協作</span>
+        <span class="text-sm fw-600 text-primary">${Utils.formatCurrency(spent)} 已記錄</span>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+// Filter chips
+document.getElementById('filter-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  currentFilter = chip.dataset.status;
+  renderList();
+});
+
+// Populate station select (竹竹苗 only)
+const stationSel = document.getElementById('f-station');
+ALL_STATIONS.filter(s=>s.region==='竹竹苗').forEach(s=>{
+  const opt = document.createElement('option');
+  opt.value = s.id; opt.textContent = s.name;
+  stationSel.appendChild(opt);
+});
+// Set today as default date
+document.getElementById('f-start').value = Utils.today();
+
+function createItinerary() {
+  const name    = document.getElementById('f-name').value.trim();
+  const start   = document.getElementById('f-start').value;
+  const days    = parseInt(document.getElementById('f-days').value);
+  const station = document.getElementById('f-station').value;
+  const budget  = parseInt(document.getElementById('f-budget').value) || 0;
+
+  if (!name)    { showToast('請輸入行程名稱', 'error'); return; }
+  if (!start)   { showToast('請選擇出發日期', 'error'); return; }
+  if (!station) { showToast('請選擇起點車站', 'error'); return; }
+
+  // 竹竹苗驗證
+  if (!Utils.isZhuzhumiaoStation(station)) {
+    document.getElementById('station-warning').style.display = 'flex';
+    return;
+  }
+
+  const itin = {
+    id: Utils.genId('itin'),
+    name, startDate: start, days,
+    startStation: station, status: '規劃中',
+    ownerId: CURRENT_USER.id, budget,
+    collaborators: [], linkedTrainOrders: [], linkedHousingOrders: [],
+    days_items: Object.fromEntries(
+      Array.from({length:days}, (_,i)=>[`D${i+1}`, []])
+    ),
+    expenses: [], votes: {}, comments: [],
+  };
+  Store.saveItinerary(itin);
+  closeModal('modal-create');
+  showToast(`行程「${name}」已建立！`, 'success');
+  renderList();
+  // 清空表單
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-station').value = '';
+  document.getElementById('f-budget').value = '';
+  document.getElementById('station-warning').style.display = 'none';
+}
+
+stationSel.addEventListener('change', () => {
+  const warn = document.getElementById('station-warning');
+  warn.style.display = stationSel.value && !Utils.isZhuzhumiaoStation(stationSel.value) ? 'flex' : 'none';
+});
+
+renderList();
+</script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>我的車票 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.ticket-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:16px;transition:var(--t);}
+.ticket-card:hover{box-shadow:var(--shadow);}
+.ticket-header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:white;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.ticket-body{padding:20px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;}
+@media(max-width:600px){.ticket-body{grid-template-columns:1fr;}}
+.ticket-route{display:flex;align-items:center;gap:12px;}
+.ticket-station{font-size:22px;font-weight:700;}
+.ticket-arrow{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;}
+.ticket-arrow-line{width:100%;height:2px;background:var(--border);}
+.ticket-footer{padding:12px 20px;background:var(--surface-warm);border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;}
+.status-used{opacity:.6;}
+.refund-info{font-size:12px;color:var(--text-muted);}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link active">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-header-inner" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 class="page-title">🎫 我的車票</h1>
+        <p class="page-subtitle">查看電子票券、取票、退票與改票</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('modal-retrieve')">🔍 取票查詢</button>
+        <a href="train-search.html" class="btn btn-primary btn-sm">＋ 訂新票</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+  <div class="container" style="max-width:800px;">
+
+    <div class="filter-chips" id="status-chips">
+      <button class="chip active" data-s="全部">全部</button>
+      <button class="chip" data-s="已付款">已付款</button>
+      <button class="chip" data-s="已使用">已使用</button>
+      <button class="chip" data-s="已取消">已取消</button>
+    </div>
+
+    <div id="ticket-list"></div>
+    <div id="ticket-empty" class="empty-state hidden">
+      <div class="empty-icon">🎫</div>
+      <div class="empty-title">目前沒有車票</div>
+      <div class="empty-text">前往台鐵車票查詢頁面訂購</div>
+      <a href="train-search.html" class="btn btn-primary">查詢班次</a>
+    </div>
+
+  </div>
+  </div>
+</main>
+</div>
+
+<!-- Modal: QR Code / 取票 -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">電子乘車憑證</span>
+      <button class="btn-icon" onclick="closeModal('modal-qr')">✕</button>
+    </div>
+    <div class="modal-body" id="qr-body" style="text-align:center;"></div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-secondary" onclick="closeModal('modal-qr')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 退票 -->
+<div class="modal-overlay" id="modal-refund">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">退票申請</span>
+      <button class="btn-icon" onclick="closeModal('modal-refund')">✕</button>
+    </div>
+    <div class="modal-body" id="refund-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-refund')">取消</button>
+      <button class="btn btn-danger" id="refund-confirm-btn">確認退票</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 改票 -->
+<div class="modal-overlay" id="modal-change">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">改票申請</span>
+      <button class="btn-icon" onclick="closeModal('modal-change')">✕</button>
+    </div>
+    <div class="modal-body" id="change-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-change')">取消</button>
+      <button class="btn btn-primary" onclick="confirmChange()">確認改票</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 分票 -->
+<div class="modal-overlay" id="modal-transfer">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">分票轉移</span>
+      <button class="btn-icon" onclick="closeModal('modal-transfer')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">將電子票券轉移至其他已註冊會員帳號</p>
+      <div class="form-group mb-4">
+        <label class="form-label">收票人 Email</label>
+        <input class="form-control" id="transfer-email" type="email" placeholder="friend@example.com">
+      </div>
+      <div class="alert alert-warning">
+        <span class="alert-icon">⚠</span>
+        <span>分票後票券將從您帳號移除，操作無法撤銷。</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-transfer')">取消</button>
+      <button class="btn btn-primary" id="transfer-confirm-btn">確認分票</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 取票查詢 -->
+<div class="modal-overlay" id="modal-retrieve">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">取票查詢</span>
+      <button class="btn-icon" onclick="closeModal('modal-retrieve')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">輸入訂單編號或掃描 QR Code 取票（發車前 30 分鐘內可取票）</p>
+      <div class="form-group mb-4">
+        <label class="form-label">訂單編號</label>
+        <input class="form-control" id="retrieve-id" placeholder="例：TT-3511-20260620-15A-001">
+      </div>
+      <div id="retrieve-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-retrieve')">關閉</button>
+      <button class="btn btn-primary" onclick="doRetrieve()">查詢取票</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+const STATUS_COLOR = { '已付款':'badge-success','已使用':'badge-muted','已取消':'badge-muted','退票中':'badge-danger' };
+let filterStatus = '全部';
+let activeTicketId = null;
+
+function renderTickets() {
+  let tickets = Store.getTrainTickets().filter(t=>t.userId===CURRENT_USER.id);
+  if (filterStatus!=='全部') tickets = tickets.filter(t=>t.status===filterStatus);
+  const el = document.getElementById('ticket-list');
+  const empty = document.getElementById('ticket-empty');
+  if (!tickets.length) { el.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  el.innerHTML = tickets.map(t=>{
+    const canRefund = Utils.canRefundTicket(t);
+    const canChange = Utils.canChangeTicket(t);
+    const canTransfer = Utils.canTransferTicket(t);
+    const isUsed = t.status==='已使用'||t.status==='已取消';
+
+    const depDt = new Date(`${t.date} ${t.dep}`);
+    const hoursLeft = (depDt - new Date()) / 3600000;
+    const daysBefore = Math.floor(hoursLeft/24);
+    const feeRate = daysBefore >= 25? 0.01 : daysBefore >= 3? 0.03 : daysBefore >= 1? 0.05 : 0.10;
+
+    return `
+    <div class="ticket-card ${isUsed?'status-used':''}">
+      <div class="ticket-header">
+        <div>
+          <span style="font-size:12px;opacity:.8;">${t.type} #${t.trainNo}</span>
+          <div style="font-size:13px;font-weight:600;">${t.date} ・ ${t.dep} → ${t.arr}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;">${t.status}</span>
+        </div>
+      </div>
+      <div class="ticket-body">
+        <div>
+          <div class="ticket-route">
+            <div class="ticket-station">${t.from}</div>
+            <div class="ticket-arrow">
+              <div style="font-size:12px;color:var(--text-muted);">${Utils.formatDuration(
+                TRAIN_SCHEDULES.find(s=>s.id===t.scheduleId)?.duration||60
+              )}</div>
+              <div class="ticket-arrow-line"></div>
+              <div style="font-size:11px;color:var(--text-muted);">🚂</div>
+            </div>
+            <div class="ticket-station">${t.to}</div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-muted);">
+            <span>💺 車廂 ${t.seatCar} 號 ${t.seatNo}</span>
+            <span>🎫 ${t.ticketType}</span>
+            <span class="fw-700 text-primary">${Utils.formatCurrency(t.price)}</span>
+          </div>
+          ${canRefund && hoursLeft>0 ?`<div class="refund-info mt-2">退票手續費：${(feeRate*100).toFixed(0)}%，可退 ${Utils.formatCurrency(Math.round(t.price*(1-feeRate)))}</div>`:''}
+        </div>
+        <div style="text-align:center;" id="qr-mini-${t.id}">
+          ${t.status==='已付款'?`
+            <div class="qr-wrap" style="cursor:pointer;" onclick="showQR('${t.id}')" title="點擊查看完整 QR Code">
+              <div class="qr-grid" id="qr-mini-grid-${t.id}"></div>
+            </div>
+            <div class="text-xs text-muted mt-2">點擊取票</div>`
+          :`<div style="font-size:36px;opacity:.4;">${t.status==='已使用'?'✅':'❌'}</div>`}
+        </div>
+      </div>
+      <div class="ticket-footer">
+        ${t.status==='已付款'?`<button class="btn btn-primary btn-sm" onclick="showQR('${t.id}')">📱 取票</button>`:''}
+        ${canRefund?`<button class="btn btn-danger btn-sm" onclick="showRefund('${t.id}')">退票</button>`:''}
+        ${canChange?`<button class="btn btn-secondary btn-sm" onclick="showChange('${t.id}')">改票</button>`:''}
+        ${canTransfer?`<button class="btn btn-ghost btn-sm" onclick="showTransfer('${t.id}')">↗ 分票</button>`:''}
+        <span class="text-xs text-muted" style="margin-left:auto;">${t.qrCode}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Render mini QR grids
+  tickets.filter(t=>t.status==='已付款').forEach(t=>{
+    const g = document.getElementById('qr-mini-grid-'+t.id);
+    if (g) { g.style.display='grid'; g.style.gridTemplateColumns='repeat(10,8px)'; g.style.gap='1px';
+      const p=[1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,0,0,1,0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,1,0,1,1,0,1,0,1,0,1,1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,1,1,0,0,1,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,1,0,1,1,0,1,1,0,1,0,0,1,1];
+      g.innerHTML=p.map(b=>`<div style="width:8px;height:8px;background:${b?'#333':'transparent'};"></div>`).join('');
+    }
+  });
+}
+
+function showQR(ticketId) {
+  const t = Store.getTrainTickets().find(t=>t.id===ticketId);
+  if (!t) return;
+  // Check 30-min rule
+  const depDt = new Date(`${t.date} ${t.dep}`);
+  const minutesBefore = (depDt - new Date()) / 60000;
+  const canPickup = minutesBefore <= 30 || t.date <= Utils.today();
+  document.getElementById('qr-body').innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div class="fw-700" style="font-size:16px;margin-bottom:4px;">${t.from} → ${t.to}</div>
+      <div class="text-muted text-sm">${t.date} ${t.dep} ・ 車廂${t.seatCar}號${t.seatNo}</div>
+    </div>
+    ${!canPickup?`<div class="alert alert-info mb-4"><span class="alert-icon">ℹ</span><span>取票時間：發車前 30 分鐘內方可取票。<br>距發車還有 ${Math.floor(minutesBefore/60)} 小時 ${Math.round(minutesBefore%60)} 分鐘。</span></div>`:''}
+    <div style="display:flex;justify-content:center;margin-bottom:16px;">
+      <div class="qr-wrap">
+        <div class="qr-grid" id="qr-full-grid"></div>
+      </div>
+    </div>
+    <div class="text-xs text-muted" style="word-break:break-all;">${t.qrCode}</div>
+    ${canPickup?`<button class="btn btn-success btn-full mt-4" onclick="doPickup('${t.id}')">✓ 確認取票（啟用一次性鎖定）</button>`:''}`;
+
+  const g = document.getElementById('qr-full-grid');
+  const p=[1,1,1,1,1,1,1,0,1,0,1,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,1,1,0,0,1,0,0,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,1,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,0,0,0,1,0,1,1,0,0,1,1,0,1,0,0,0,0,1,1,0,0,1,0,1,1];
+  g.style.display='grid'; g.style.gridTemplateColumns='repeat(10,14px)'; g.style.gap='2px';
+  g.innerHTML=p.map(b=>`<div style="width:14px;height:14px;background:${b?'#333':'transparent'};"></div>`).join('');
+
+  openModal('modal-qr');
+}
+
+function doPickup(ticketId) {
+  Store.updateTrainTicket(ticketId, { status:'已使用', used:true });
+  closeModal('modal-qr');
+  renderTickets();
+  showToast('取票成功！祝您旅途愉快 🚂', 'success');
+}
+
+function showRefund(ticketId) {
+  const t = Store.getTrainTickets().find(t=>t.id===ticketId);
+  if (!t) return;
+  activeTicketId = ticketId;
+  const depDt = new Date(`${t.date} ${t.dep}`);
+  const daysBefore = Math.floor((depDt - new Date()) / 86400000);
+  const rate = Utils.calcTrainRefundByDays(daysBefore);
+  const feeAmt = rate!=null ? Math.round(t.price * rate) : t.price;
+  const refundAmt = rate!=null ? t.price - feeAmt : 0;
+
+  document.getElementById('refund-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="flex justify-between text-sm"><span class="text-muted">路線</span><span class="fw-500">${t.from} → ${t.to}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">乘車日期</span><span class="fw-500">${t.date} ${t.dep}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">票價</span><span class="fw-500">${Utils.formatCurrency(t.price)}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">距發車天數</span><span class="fw-500">${daysBefore} 天</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">手續費率</span><span class="fw-500 text-danger">${rate!=null?(rate*100).toFixed(0)+'%':'不可退'}</span></div>
+      <div class="flex justify-between text-sm text-danger"><span>手續費</span><span>-${Utils.formatCurrency(feeAmt)}</span></div>
+      <div class="divider" style="margin:4px 0;"></div>
+      <div class="flex justify-between fw-700 text-lg ${rate===null||refundAmt===0?'text-danger':'text-success'}">
+        <span>實際退款</span><span>${rate===null?'不可退票':Utils.formatCurrency(refundAmt)}</span>
+      </div>
+    </div>`;
+  document.getElementById('refund-confirm-btn').disabled = rate===null;
+  document.getElementById('refund-confirm-btn').onclick = ()=>confirmRefund(ticketId, refundAmt);
+  openModal('modal-refund');
+}
+
+function confirmRefund(ticketId, refundAmt) {
+  Store.updateTrainTicket(ticketId, { status:'已取消', canRefund:false, canChange:false, canTransfer:false });
+  closeModal('modal-refund');
+  renderTickets();
+  showToast(`退票申請已送出，將退回 ${Utils.formatCurrency(refundAmt)}`, 'success');
+}
+
+function showChange(ticketId) {
+  const t = Store.getTrainTickets().find(t=>t.id===ticketId);
+  if (!t) return;
+  activeTicketId = ticketId;
+  const fromOpts = ALL_STATIONS.map(s=>`<option value="${s.id}" ${s.id===ALL_STATIONS.find(st=>st.name===t.from)?.id?'selected':''}>${s.name}</option>`).join('');
+  const toOpts   = ALL_STATIONS.map(s=>`<option value="${s.id}" ${s.id===ALL_STATIONS.find(st=>st.name===t.to)?.id?'selected':''}>${s.name}</option>`).join('');
+  document.getElementById('change-body').innerHTML = `
+    <div class="alert alert-info mb-4"><span class="alert-icon">ℹ</span><span>改票條件：未取票、尚未改過票、距發車 1 小時以上。免手續費。</span></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="flex justify-between text-sm"><span class="text-muted">原始票號</span><span class="fw-500 text-xs">${t.qrCode}</span></div>
+      <div class="form-group">
+        <label class="form-label">新出發站</label>
+        <select class="form-control" id="ch-from">${fromOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">新目的站</label>
+        <select class="form-control" id="ch-to">${toOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">新乘車日期</label>
+        <input class="form-control" id="ch-date" type="date" value="${t.date}">
+      </div>
+    </div>`;
+  openModal('modal-change');
+}
+
+function confirmChange() {
+  const t = Store.getTrainTickets().find(t=>t.id===activeTicketId);
+  if (!t) return;
+  const newFrom = Utils.getStationName(document.getElementById('ch-from').value);
+  const newTo   = Utils.getStationName(document.getElementById('ch-to').value);
+  const newDate = document.getElementById('ch-date').value;
+  const newQR = `TT-CHG-${Date.now().toString(36).toUpperCase()}`;
+  Store.updateTrainTicket(activeTicketId, { from:newFrom, to:newTo, date:newDate, qrCode:newQR, changed:true });
+  closeModal('modal-change');
+  renderTickets();
+  showToast('改票成功！新電子票券已更新', 'success');
+}
+
+function showTransfer(ticketId) {
+  activeTicketId = ticketId;
+  document.getElementById('transfer-email').value='';
+  document.getElementById('transfer-confirm-btn').onclick = ()=>confirmTransfer(ticketId);
+  openModal('modal-transfer');
+}
+
+function confirmTransfer(ticketId) {
+  const email = document.getElementById('transfer-email').value.trim();
+  if (!email) { showToast('請輸入收票人 Email','error'); return; }
+  const user = USERS.find(u=>u.email===email);
+  if (!user) { showToast('找不到此 Email 對應的會員','error'); return; }
+  if (user.id===CURRENT_USER.id) { showToast('無法分票給自己','error'); return; }
+  Store.updateTrainTicket(ticketId, { userId:user.id, canTransfer:false, transferred:true });
+  closeModal('modal-transfer');
+  renderTickets();
+  showToast(`車票已成功轉移給 ${user.name}`, 'success');
+}
+
+function doRetrieve() {
+  const code = document.getElementById('retrieve-id').value.trim();
+  const tickets = Store.getTrainTickets();
+  const t = tickets.find(t=>t.qrCode===code||t.id===code);
+  const result = document.getElementById('retrieve-result');
+  if (!t) {
+    result.innerHTML='<div class="alert alert-danger"><span class="alert-icon">✕</span><span>找不到此票券，請確認訂單編號是否正確。</span></div>';
+    return;
+  }
+  result.innerHTML=`<div class="alert alert-success"><span class="alert-icon">✓</span><span><strong>${t.from} → ${t.to}</strong><br>${t.date} ${t.dep} ・ 車廂${t.seatCar}號${t.seatNo}<br>狀態：${t.status}</span></div>`;
+}
+
+// Filter chips
+document.getElementById('status-chips').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#status-chips .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  filterStatus = chip.dataset.s;
+  renderTickets();
+});
+
+renderTickets();
+</script>
+</body>
+</html>

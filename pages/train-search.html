@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>台鐵車票查詢 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.train-type-badge{padding:2px 8px;border-radius:var(--r-full);font-size:11px;font-weight:600;}
+.type-自強{background:#FEF0E0;color:#C46010;}
+.type-莒光{background:#E8F0FE;color:#3060C4;}
+.type-區間{background:#E8FEE8;color:#308030;}
+.seat-info{display:flex;align-items:center;gap:6px;font-size:13px;}
+.seat-full{color:var(--danger);}
+.seat-low{color:var(--warning);}
+.seat-ok{color:var(--success);}
+.train-results{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+.ticket-type-tab{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.ticket-type-opt{padding:6px 16px;border:1.5px solid var(--border);border-radius:var(--r-full);font-size:13px;cursor:pointer;background:var(--surface);transition:var(--t);}
+.ticket-type-opt.active{border-color:var(--primary);background:var(--primary-ghost);color:var(--primary);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link active">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <a href="train-tickets.html" class="btn btn-secondary btn-sm">我的車票</a>
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1 class="page-title">🚂 台鐵車票</h1>
+      <p class="page-subtitle">查詢班次、線上訂票、取票退票一站搞定</p>
+    </div>
+  </div>
+
+  <div class="section">
+  <div class="container">
+
+    <!-- Search Box -->
+    <div class="search-box">
+      <div class="form-row form-row-4" style="gap:12px;align-items:flex-end;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">出發站</label>
+          <select class="form-control" id="f-from">
+            <option value="">請選擇</option>
+          </select>
+        </div>
+        <div class="form-group" style="position:relative;">
+          <label class="form-label">目的站</label>
+          <select class="form-control" id="f-to">
+            <option value="">請選擇</option>
+          </select>
+          <button style="position:absolute;right:-20px;top:28px;background:none;border:none;font-size:18px;cursor:pointer;z-index:1;" onclick="swapStations()" title="互換">⇄</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">乘車日期</label>
+          <input class="form-control" id="f-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">票種</label>
+          <select class="form-control" id="f-ticket-type">
+            <option value="full">全票</option>
+            <option value="half">半票</option>
+            <option value="child">孩童票</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div class="ticket-type-tab" id="train-type-filter">
+          <button class="ticket-type-opt active" data-type="">全部車種</button>
+          <button class="ticket-type-opt" data-type="自強">🔴 自強號</button>
+          <button class="ticket-type-opt" data-type="莒光">🔵 莒光號</button>
+          <button class="ticket-type-opt" data-type="區間">🟢 區間車</button>
+        </div>
+        <button class="btn btn-primary" onclick="doSearch()">🔍 查詢班次</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="search-status" style="display:none;" class="text-sub fw-500 mb-4"></div>
+    <div id="results-area" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div id="result-count" class="text-sub fw-500"></div>
+        <div class="text-xs text-muted">✓ 即時班次資料（示意）</div>
+      </div>
+      <div class="train-results" id="train-results"></div>
+    </div>
+
+    <div id="no-result" class="empty-state hidden">
+      <div class="empty-icon">🚉</div>
+      <div class="empty-title">查無班次</div>
+      <div class="empty-text">請嘗試調整出發站、目的站或乘車日期</div>
+    </div>
+
+    <!-- Tips -->
+    <div id="tips-area">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;">
+        <div class="card">
+          <div class="card-body">
+            <div style="font-size:24px;margin-bottom:8px;">💡</div>
+            <div class="fw-600 mb-2">竹竹苗熱門路線</div>
+            <div class="text-sm text-muted" style="display:flex;flex-direction:column;gap:6px;">
+              <span style="cursor:pointer;color:var(--primary);" onclick="quickSearch('s011','s001')">台北 → 新竹</span>
+              <span style="cursor:pointer;color:var(--primary);" onclick="quickSearch('s011','s002')">台北 → 內灣</span>
+              <span style="cursor:pointer;color:var(--primary);" onclick="quickSearch('s001','s004')">新竹 → 苗栗</span>
+              <span style="cursor:pointer;color:var(--primary);" onclick="quickSearch('s011','s004')">台北 → 苗栗</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div style="font-size:24px;margin-bottom:8px;">📋</div>
+            <div class="fw-600 mb-2">退票手續費說明</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="flex items-center gap-2 text-sm"><span class="badge badge-success">1%</span><span>發車前 25 日以上</span></div>
+              <div class="flex items-center gap-2 text-sm"><span class="badge badge-warning">3%</span><span>發車前 3–24 日</span></div>
+              <div class="flex items-center gap-2 text-sm"><span class="badge badge-warning">5%</span><span>發車前 1–2 日</span></div>
+              <div class="flex items-center gap-2 text-sm"><span class="badge badge-danger">10%</span><span>當日（發車前 1 小時以上）</span></div>
+              <div class="flex items-center gap-2 text-sm"><span class="badge badge-danger">不可退</span><span>距發車 ≤ 1 小時或已使用</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+</main>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+// Populate station dropdowns
+['f-from','f-to'].forEach(id=>{
+  const sel = document.getElementById(id);
+  ALL_STATIONS.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value=s.id; opt.textContent=`${s.name}${s.region==='竹竹苗'?' ★':''}`;
+    sel.appendChild(opt);
+  });
+});
+// Defaults
+document.getElementById('f-from').value='s011';
+document.getElementById('f-to').value='s001';
+document.getElementById('f-date').value = Utils.today();
+
+let trainTypeFilter = '';
+
+// Train type filter
+document.getElementById('train-type-filter').addEventListener('click', e=>{
+  const btn = e.target.closest('.ticket-type-opt');
+  if (!btn) return;
+  document.querySelectorAll('.ticket-type-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  trainTypeFilter = btn.dataset.type;
+  if (document.getElementById('results-area').style.display!=='none') doSearch();
+});
+
+function swapStations() {
+  const f=document.getElementById('f-from'), t=document.getElementById('f-to');
+  [f.value, t.value] = [t.value, f.value];
+}
+
+function quickSearch(from, to) {
+  document.getElementById('f-from').value = from;
+  document.getElementById('f-to').value = to;
+  doSearch();
+}
+
+function doSearch() {
+  const from = document.getElementById('f-from').value;
+  const to   = document.getElementById('f-to').value;
+  const date = document.getElementById('f-date').value;
+  const ticketType = document.getElementById('f-ticket-type').value;
+
+  if (!from||!to) { showToast('請選擇出發站與目的站','error'); return; }
+  if (from===to)  { showToast('出發站與目的站不能相同','error'); return; }
+  if (!date)      { showToast('請選擇乘車日期','error'); return; }
+
+  let results = TRAIN_SCHEDULES.filter(s=>s.from===from && s.to===to);
+  if (trainTypeFilter) results = results.filter(s=>s.type===trainTypeFilter);
+
+  document.getElementById('tips-area').style.display='none';
+  document.getElementById('no-result').classList.add('hidden');
+  document.getElementById('results-area').style.display='none';
+
+  if (!results.length) {
+    document.getElementById('no-result').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('results-area').style.display='block';
+  const fromName=Utils.getStationName(from), toName=Utils.getStationName(to);
+  document.getElementById('result-count').textContent=`${fromName} → ${toName} ・ ${date} ・ 共 ${results.length} 班`;
+
+  document.getElementById('train-results').innerHTML = results.map(tr=>{
+    const price = tr.price[ticketType] || tr.price.full;
+    const seatClass = tr.seats===0?'seat-full':tr.seats<20?'seat-low':'seat-ok';
+    const seatText  = tr.seats===0?'已售完':`剩 ${tr.seats} 位`;
+    return `
+    <div class="train-row ${tr.seats===0?'':''}">
+      <div>
+        <div class="train-time">${tr.dep}</div>
+        <div class="text-xs text-muted">${tr.arr}</div>
+      </div>
+      <div class="train-route">
+        <div>${fromName}</div>
+        <div class="train-line">
+          <div class="train-duration">${Utils.formatDuration(tr.duration)}</div>
+        </div>
+        <div>${toName}</div>
+      </div>
+      <div style="text-align:center;min-width:60px;">
+        <span class="train-type-badge type-${tr.type}">${tr.type}</span>
+        <div class="text-xs text-muted mt-1">#${tr.trainNo}</div>
+      </div>
+      <div style="text-align:center;min-width:60px;">
+        <div class="seat-info ${seatClass}">
+          <span>${tr.seats===0?'❌':'💺'}</span><span>${seatText}</span>
+        </div>
+        ${tr.delay>0?`<div class="train-delay">延誤 ${tr.delay} 分</div>`:''}
+      </div>
+      <div style="min-width:90px;text-align:right;">
+        <div style="font-size:18px;font-weight:700;color:var(--primary);">${Utils.formatCurrency(price)}</div>
+        <div class="text-xs text-muted">${ticketType==='full'?'全票':ticketType==='half'?'半票':'孩童票'}</div>
+      </div>
+      <div>
+        <button class="btn btn-primary btn-sm" ${tr.seats===0?'disabled':''} onclick="goBook('${tr.id}','${ticketType}','${date}')">
+          ${tr.seats===0?'已售完':'訂票'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goBook(scheduleId, ticketType, date) {
+  location.href = `train-booking.html?sid=${scheduleId}&type=${ticketType}&date=${date}`;
+}
+</script>
+</body>
+</html>

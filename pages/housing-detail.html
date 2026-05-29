@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>房源詳情 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.detail-layout{display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start;}
+@media(max-width:900px){.detail-layout{grid-template-columns:1fr;}}
+.hero-img{width:100%;height:280px;background:linear-gradient(135deg,var(--bg-alt),var(--border));display:flex;align-items:center;justify-content:center;font-size:80px;border-radius:var(--r-lg);margin-bottom:24px;}
+.room-card{border:1.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;cursor:pointer;transition:var(--t);}
+.room-card:hover{border-color:var(--primary);background:var(--primary-ghost);}
+.room-card.selected{border-color:var(--primary);background:var(--primary-ghost);}
+.review-item{padding:14px 0;border-bottom:1px solid var(--border-light);}
+.review-item:last-child{border-bottom:none;}
+.payment-method{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.pay-btn{padding:8px 16px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);font-size:13px;cursor:pointer;transition:var(--t);}
+.pay-btn.active{border-color:var(--primary);background:var(--primary-ghost);color:var(--primary);font-weight:600;}
+.price-breakdown{background:var(--surface-warm);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px;}
+.price-row{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;}
+.price-row.total{border-top:1px solid var(--border);margin-top:8px;padding-top:12px;font-size:16px;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link active">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="section">
+  <div class="container">
+    <div style="margin-bottom:16px;">
+      <a href="housing-search.html" class="text-muted text-sm">← 返回搜尋結果</a>
+    </div>
+    <div id="page-content"></div>
+  </div>
+  </div>
+</main>
+</div>
+
+<!-- Modal: 訂房確認 -->
+<div class="modal-overlay" id="modal-book">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">確認訂房資訊</span>
+      <button class="btn-icon" onclick="closeModal('modal-book')">✕</button>
+    </div>
+    <div class="modal-body" id="book-summary"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-book')">返回修改</button>
+      <button class="btn btn-primary" onclick="confirmBook()">確認並付款</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 付款成功 -->
+<div class="modal-overlay" id="modal-paid">
+  <div class="modal modal-sm">
+    <div class="modal-body" style="text-align:center;padding:40px 24px;">
+      <div style="font-size:56px;margin-bottom:16px;">🎉</div>
+      <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">訂房成功！</h3>
+      <p class="text-muted text-sm mb-5">訂單確認通知已發送至您的信箱</p>
+      <div id="paid-summary" style="background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--r);padding:16px;margin-bottom:24px;text-align:left;"></div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <a href="housing-orders.html" class="btn btn-primary">查看訂單</a>
+        <button class="btn btn-secondary" onclick="closeModal('modal-paid')">繼續瀏覽</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 聊天室 -->
+<div class="modal-overlay" id="modal-chat">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="chat-title">與民宿主人聊天</span>
+      <button class="btn-icon" onclick="closeModal('modal-chat')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div class="chat-window">
+        <div class="chat-messages" id="chat-msgs"></div>
+        <div class="chat-input-area">
+          <input class="form-control" id="chat-input" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-primary btn-sm" onclick="sendChat()">送出</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+const params = new URLSearchParams(location.search);
+const hotelId = params.get('id') || 'h001';
+const hotel = HOTELS.find(h=>h.id===hotelId);
+if (!hotel) { document.getElementById('page-content').innerHTML='<div class="empty-state"><div class="empty-icon">🏨</div><div class="empty-title">找不到此房源</div></div>'; }
+
+let selectedRoom = null;
+let selectedPayMethod = '信用卡';
+let chatMsgs = [...(hotel?.chat||[])];
+
+function renderPage() {
+  const stationName = Utils.getStationName(hotel.station);
+  const today = Utils.today();
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomStr = tomorrow.toISOString().split('T')[0];
+
+  document.getElementById('page-content').innerHTML = `
+  <div class="detail-layout">
+    <div>
+      <div class="hero-img">${hotel.images[0]}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">${hotel.name}</h1>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--text-muted);">
+            <span class="rating">★ ${hotel.rating}</span>
+            <span>(${hotel.reviewCount} 則評價)</span>
+            <span>📍 ${stationName}站 ${hotel.stationDist}km</span>
+            <span class="badge badge-muted">${hotel.type}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="openChat()">💬 聯絡房東</button>
+          <button class="btn-icon" id="fav-btn" onclick="toggleFav()" title="收藏">${Store.isFavorite(hotel.id)?'❤️':'🤍'}</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs" id="hotel-tabs">
+        <button class="tab active" data-tab="tab-info">房源資訊</button>
+        <button class="tab" data-tab="tab-rooms">選擇房型</button>
+        <button class="tab" data-tab="tab-reviews">旅客評價</button>
+        <button class="tab" data-tab="tab-policy">入住政策</button>
+      </div>
+
+      <!-- Tab: Info -->
+      <div class="tab-panel active" id="tab-info">
+        <h3 class="fw-600 mb-3">關於此房源</h3>
+        <p class="text-sub" style="line-height:1.8;margin-bottom:20px;">${hotel.desc}</p>
+        <h3 class="fw-600 mb-3">設備與服務</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          ${hotel.amenities.map(a=>`<div style="display:flex;align-items:center;gap:8px;font-size:14px;"><span class="text-success">✓</span>${a}</div>`).join('')}
+        </div>
+        <div class="divider"></div>
+        <h3 class="fw-600 mb-3">地理位置</h3>
+        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--r);height:120px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px;">
+          📍 ${stationName}站附近 ${hotel.stationDist}km（地圖示意）
+        </div>
+      </div>
+
+      <!-- Tab: Rooms -->
+      <div class="tab-panel" id="tab-rooms">
+        <h3 class="fw-600 mb-4">可選房型</h3>
+        ${hotel.rooms.map(r=>`
+          <div class="room-card ${selectedRoom?.id===r.id?'selected':''}" id="room-${r.id}" onclick="selectRoom('${r.id}')">
+            <div style="display:flex;gap:14px;align-items:center;">
+              <div style="font-size:36px;">${r.imageEmoji}</div>
+              <div style="flex:1;">
+                <div class="fw-600 mb-1">${r.name}</div>
+                <div class="text-sm text-muted" style="display:flex;gap:12px;flex-wrap:wrap;">
+                  <span>👤 最多 ${r.capacity} 人</span>
+                  <span>🛏 ${r.beds}</span>
+                  <span>📐 ${r.area}m²</span>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div class="fw-700" style="font-size:18px;color:var(--primary);">${Utils.formatCurrency(r.price)}</div>
+                <div class="text-xs text-muted">/ 晚</div>
+                <div class="text-xs ${r.available>0?'text-success':'text-danger'}">${r.available>0?`剩 ${r.available} 間`:'已售完'}</div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Tab: Reviews -->
+      <div class="tab-panel" id="tab-reviews">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+          <div style="font-size:48px;font-weight:700;color:var(--text);">${hotel.rating}</div>
+          <div>
+            <div class="stars">${Utils.renderStars(hotel.rating)}</div>
+            <div class="text-muted text-sm">${hotel.reviewCount} 則旅客評價</div>
+          </div>
+        </div>
+        ${hotel.reviews.map(r=>`
+          <div class="review-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="avatar" style="width:28px;height:28px;font-size:11px;background:var(--primary-light);">${r.user[0]}</div>
+                <span class="fw-500 text-sm">${r.user}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="stars" style="font-size:12px;">${'★'.repeat(r.rating)}</span>
+                <span class="text-xs text-muted">${r.date}</span>
+              </div>
+            </div>
+            <p class="text-sm text-sub">${r.text}</p>
+          </div>`).join('')}
+      </div>
+
+      <!-- Tab: Policy -->
+      <div class="tab-panel" id="tab-policy">
+        <h3 class="fw-600 mb-3">入住規定</h3>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="flex gap-4">
+            <span class="text-muted text-sm" style="width:100px;">入住時間</span>
+            <span class="text-sm fw-500">15:00 以後</span>
+          </div>
+          <div class="flex gap-4">
+            <span class="text-muted text-sm" style="width:100px;">退房時間</span>
+            <span class="text-sm fw-500">11:00 以前</span>
+          </div>
+          <div class="flex gap-4">
+            <span class="text-muted text-sm" style="width:100px;">取消政策</span>
+            <span class="text-sm fw-500">${hotel.policies}</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <h3 class="fw-600 mb-3">退款規則</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="flex items-center gap-3 text-sm">
+            <span class="badge badge-success">全額退款</span>
+            <span>入住前 10 天以上取消</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="badge badge-warning">退 70%</span>
+            <span>入住前 4–9 天取消</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="badge badge-danger">不退款</span>
+            <span>入住前 3 天內或當日取消</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Booking Widget -->
+    <div style="position:sticky;top:76px;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">立即訂房</span></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="form-row form-row-2">
+              <div class="form-group">
+                <label class="form-label">入住日期</label>
+                <input class="form-control" id="bk-checkin" type="date" value="${today}" onchange="calcPrice()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">退房日期</label>
+                <input class="form-control" id="bk-checkout" type="date" value="${tomStr}" onchange="calcPrice()">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">入住人數</label>
+              <select class="form-control" id="bk-guests">
+                <option value="1">1 人</option><option value="2" selected>2 人</option>
+                <option value="3">3 人</option><option value="4">4 人</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">選擇房型</label>
+              <select class="form-control" id="bk-room" onchange="onRoomSelect()">
+                <option value="">請選擇房型</option>
+                ${hotel.rooms.map(r=>`<option value="${r.id}" ${r.available===0?'disabled':''}>${r.name} — ${Utils.formatCurrency(r.price)}/晚 ${r.available===0?'(售完)':''}</option>`).join('')}
+              </select>
+            </div>
+            <div id="price-breakdown-widget"></div>
+            <div class="form-group">
+              <label class="form-label">付款方式</label>
+              <div class="payment-method">
+                <button class="pay-btn active" onclick="setPayMethod('信用卡',this)">💳 信用卡</button>
+                <button class="pay-btn" onclick="setPayMethod('電子支付',this)">📱 電子支付</button>
+                <button class="pay-btn" onclick="setPayMethod('銀行轉帳',this)">🏦 銀行轉帳</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-primary btn-full btn-lg" onclick="bookRoom()">立即訂房</button>
+          <div class="text-xs text-center text-muted mt-3">付款後系統將發送確認通知</div>
+        </div>
+      </div>
+    </div>
+
+  </div>`;
+
+  initTabs('hotel-tabs');
+}
+
+function selectRoom(roomId) {
+  selectedRoom = hotel.rooms.find(r=>r.id===roomId);
+  document.querySelectorAll('.room-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('room-'+roomId)?.classList.add('selected');
+  document.getElementById('bk-room').value = roomId;
+  calcPrice();
+}
+
+function onRoomSelect() {
+  const roomId = document.getElementById('bk-room').value;
+  if (roomId) selectRoom(roomId);
+  else { selectedRoom=null; document.getElementById('price-breakdown-widget').innerHTML=''; }
+}
+
+function setPayMethod(method, btn) {
+  selectedPayMethod = method;
+  document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function calcPrice() {
+  if (!selectedRoom) { document.getElementById('price-breakdown-widget').innerHTML=''; return; }
+  const ci = document.getElementById('bk-checkin').value;
+  const co = document.getElementById('bk-checkout').value;
+  if (!ci||!co) return;
+  const nights = Utils.daysBetween(ci,co);
+  if (nights<=0) { document.getElementById('price-breakdown-widget').innerHTML='<div class="text-danger text-sm">退房日期需晚於入住日期</div>'; return; }
+  const subtotal = selectedRoom.price * nights;
+  const discount = 0;
+  const total = subtotal - discount;
+  document.getElementById('price-breakdown-widget').innerHTML = `
+    <div class="price-breakdown">
+      <div class="price-row"><span>${Utils.formatCurrency(selectedRoom.price)} × ${nights} 晚</span><span>${Utils.formatCurrency(subtotal)}</span></div>
+      ${discount?`<div class="price-row text-success"><span>優惠折扣</span><span>-${Utils.formatCurrency(discount)}</span></div>`:''}
+      <div class="price-row total"><span>總計</span><span style="color:var(--primary);">${Utils.formatCurrency(total)}</span></div>
+    </div>`;
+  return { nights, subtotal, discount, total };
+}
+
+function bookRoom() {
+  const ci = document.getElementById('bk-checkin').value;
+  const co = document.getElementById('bk-checkout').value;
+  const guests = document.getElementById('bk-guests').value;
+  if (!ci||!co) { showToast('請選擇入住與退房日期','error'); return; }
+  if (!selectedRoom) { showToast('請選擇房型','error'); return; }
+  const nights = Utils.daysBetween(ci,co);
+  if (nights<=0) { showToast('退房日期需晚於入住日期','error'); return; }
+  if (selectedRoom.available<=0) { showToast('此房型已售完','error'); return; }
+
+  const total = selectedRoom.price * nights;
+  document.getElementById('book-summary').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="flex justify-between text-sm"><span class="text-muted">住宿名稱</span><span class="fw-500">${hotel.name}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">房型</span><span class="fw-500">${selectedRoom.name}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">入住</span><span class="fw-500">${ci}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">退房</span><span class="fw-500">${co}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">人數</span><span class="fw-500">${guests} 人</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">付款方式</span><span class="fw-500">${selectedPayMethod}</span></div>
+      <div class="divider" style="margin:4px 0;"></div>
+      <div class="flex justify-between fw-700 text-lg"><span>總金額</span><span style="color:var(--primary);">${Utils.formatCurrency(total)}</span></div>
+    </div>`;
+  window._pendingOrder = { ci, co, guests:parseInt(guests), nights, total };
+  openModal('modal-book');
+}
+
+function confirmBook() {
+  const o = window._pendingOrder;
+  if (!o) return;
+  const order = {
+    id: Utils.genId('ho'),
+    hotelId: hotel.id, roomId: selectedRoom.id,
+    userId: CURRENT_USER.id,
+    checkIn: o.ci, checkOut: o.co, guests: o.guests, nights: o.nights,
+    roomName: selectedRoom.name, hotelName: hotel.name,
+    roomPrice: selectedRoom.price, discount: 0, totalAmount: o.total,
+    status: '已付款', payMethod: selectedPayMethod,
+    paidAt: new Date().toLocaleString('zh-TW').replace(/\//g,'-'),
+    itineraryId: null,
+  };
+  Store.addHousingOrder(order);
+  closeModal('modal-book');
+  document.getElementById('paid-summary').innerHTML = `
+    <div class="fw-600 mb-2">${hotel.name}</div>
+    <div class="text-sm text-sub">${selectedRoom.name} ・ ${o.ci} ~ ${o.co}</div>
+    <div class="text-sm fw-700 text-success mt-2">已付款：${Utils.formatCurrency(o.total)}</div>`;
+  openModal('modal-paid');
+  showToast('訂房成功！確認信已寄出', 'success');
+}
+
+function toggleFav() {
+  const isFav = Store.toggleFavorite(hotel.id);
+  document.getElementById('fav-btn').textContent = isFav?'❤️':'🤍';
+  showToast(isFav?'已加入收藏':'已取消收藏', isFav?'success':'');
+}
+
+function openChat() {
+  document.getElementById('chat-title').textContent = `與 ${hotel.name} 聊天`;
+  renderChatMsgs();
+  openModal('modal-chat');
+}
+
+function renderChatMsgs() {
+  document.getElementById('chat-msgs').innerHTML = chatMsgs.map(m=>`
+    <div>
+      <div class="chat-sender">${m.name} ・ ${m.time}</div>
+      <div class="chat-bubble ${m.mine?'me':'other'}">${m.text}</div>
+    </div>`).join('');
+  const el=document.getElementById('chat-msgs');el.scrollTop=el.scrollHeight;
+}
+
+function sendChat() {
+  const text = document.getElementById('chat-input').value.trim();
+  if (!text) return;
+  chatMsgs.push({ from:'u001', name:CURRENT_USER.name, text, time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}), mine:true });
+  document.getElementById('chat-input').value='';
+  renderChatMsgs();
+  // Auto-reply
+  setTimeout(()=>{
+    chatMsgs.push({ from:'host', name:'民宿主人', text:'感謝您的詢問！我們會盡快回覆您。', time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}), mine:false });
+    renderChatMsgs();
+  }, 1500);
+}
+
+renderPage();
+</script>
+</body>
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>行程明細 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.detail-layout{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;}
+@media(max-width:900px){.detail-layout{grid-template-columns:1fr;}}
+.item-type-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.type-景點{background:#FEF3E0;} .type-餐廳{background:#FEE8E8;} .type-活動{background:#E8F4FE;} .type-交通{background:#E8FEE8;} .type-住宿{background:#F4E8FE;}
+.collab-avatar{width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.vote-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:var(--r-full);font-size:12px;background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border);}
+.expense-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);}
+.expense-row:last-child{border-bottom:none;}
+.split-result{background:var(--primary-ghost);border:1px solid var(--primary-light);border-radius:var(--r);padding:16px;margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link active">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <a href="itinerary-list.html" class="text-muted text-sm">← 返回行程列表</a>
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 class="page-title" id="itin-name">載入中...</h1>
+          <p class="page-subtitle" id="itin-meta"></p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="openModal('modal-invite')">👥 邀請旅伴</button>
+          <button class="btn btn-secondary btn-sm" onclick="shareReadonly()">🔗 分享連結</button>
+          <a id="btn-train" href="train-search.html" class="btn btn-outline btn-sm">🚂 查詢車票</a>
+          <a id="btn-hotel" href="housing-search.html" class="btn btn-outline btn-sm">🏨 搜尋住宿</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+  <div class="container">
+    <div class="detail-layout">
+
+      <!-- Left: Daily Tabs -->
+      <div>
+        <div class="tabs" id="day-tabs"></div>
+        <div id="day-panels"></div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Budget Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">💰 費用總覽</span>
+            <button class="btn btn-sm btn-primary" onclick="openModal('modal-expense')">＋ 記錄支出</button>
+          </div>
+          <div class="card-body">
+            <div id="budget-display"></div>
+            <div id="expense-list" style="margin-top:12px;"></div>
+            <div id="split-display"></div>
+          </div>
+        </div>
+
+        <!-- Collaborators -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">👥 協作成員</span>
+          </div>
+          <div class="card-body" id="collab-list"></div>
+        </div>
+
+        <!-- Comments -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">💬 行程留言</span>
+          </div>
+          <div class="chat-window" style="border:none;height:280px;">
+            <div class="chat-messages" id="comment-list"></div>
+            <div class="chat-input-area">
+              <input class="form-control" id="comment-input" placeholder="輸入留言..." onkeydown="if(event.key==='Enter')addComment()">
+              <button class="btn btn-primary btn-sm" onclick="addComment()">送出</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linked Orders -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔗 關聯訂單</span></div>
+          <div class="card-body" id="linked-orders"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </div>
+</main>
+</div>
+
+<!-- Modal: 新增景點 -->
+<div class="modal-overlay" id="modal-add-item">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">新增行程項目</span>
+      <button class="btn-icon" onclick="closeModal('modal-add-item')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">名稱 *</label>
+          <input class="form-control" id="item-name" placeholder="景點/餐廳/活動名稱">
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">類型</label>
+            <select class="form-control" id="item-type">
+              <option>景點</option><option>餐廳</option><option>活動</option><option>交通</option><option>住宿</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">標示</label>
+            <select class="form-control" id="item-priority">
+              <option value="must">⭐ 必去</option>
+              <option value="candidate">📌 候選</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">時間</label>
+            <input class="form-control" id="item-time" type="time" value="09:00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">預計時長（分鐘）</label>
+            <input class="form-control" id="item-duration" type="number" value="60" min="15" step="15">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">備註</label>
+          <input class="form-control" id="item-note" placeholder="選填備註">
+        </div>
+        <!-- 非竹竹苗警告 -->
+        <div class="alert alert-warning hidden" id="item-region-warn">
+          <span class="alert-icon">⚠</span>
+          <span>您添加的景點位於竹竹苗以外的區域，仍可加入但建議以竹竹苗小站為主。</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-item')">取消</button>
+      <button class="btn btn-primary" onclick="addItem()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 費用記錄 -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">記錄支出</span>
+      <button class="btn-icon" onclick="closeModal('modal-expense')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">項目名稱 *</label>
+          <input class="form-control" id="exp-name" placeholder="例：景點門票">
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">金額（NT$）*</label>
+            <input class="form-control" id="exp-amount" type="number" min="0" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">類型</label>
+            <select class="form-control" id="exp-type">
+              <option>景點</option><option>餐飲</option><option>交通</option><option>住宿</option><option>其他</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">付款人</label>
+          <select class="form-control" id="exp-payer"></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-expense')">取消</button>
+      <button class="btn btn-primary" onclick="addExpense()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 邀請旅伴 -->
+<div class="modal-overlay" id="modal-invite">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">邀請旅伴共編</span>
+      <button class="btn-icon" onclick="closeModal('modal-invite')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">輸入已註冊會員的 Email 地址進行邀請</p>
+      <div class="form-group">
+        <label class="form-label">Email 地址</label>
+        <input class="form-control" id="invite-email" type="email" placeholder="friend@example.com">
+      </div>
+      <div class="alert alert-info mt-4" style="display:none;" id="invite-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-invite')">關閉</button>
+      <button class="btn btn-primary" onclick="sendInvite()">發送邀請</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+const params = new URLSearchParams(location.search);
+const itinId = params.get('id') || 'itin001';
+let itin = Store.getItinerary(itinId);
+if (!itin) { alert('找不到行程'); location.href='itinerary-list.html'; }
+
+let currentDay = 'D1';
+let dragSrcId = null;
+
+const TYPE_ICONS = { 景點:'🗺️', 餐廳:'🍴', 活動:'🎯', 交通:'🚗', 住宿:'🏨' };
+const STATUS_BADGE = { '規劃中':'badge-info','已完成':'badge-success','已取消':'badge-muted' };
+
+function save() { Store.saveItinerary(itin); }
+
+/* ======= Render Header ======= */
+function renderHeader() {
+  document.title = `${itin.name} | Agent TT`;
+  document.getElementById('itin-name').innerHTML =
+    `${itin.name} <span class="badge ${STATUS_BADGE[itin.status]||'badge-muted'}" style="font-size:13px;vertical-align:middle;">${itin.status}</span>`;
+  document.getElementById('itin-meta').textContent =
+    `📍 ${Utils.getStationName(itin.startStation)} ・ 📆 ${Utils.formatDate(itin.startDate)} ・ ⏱ ${itin.days} 天`;
+}
+
+/* ======= Render Day Tabs ======= */
+function renderDayTabs() {
+  const tabsEl = document.getElementById('day-tabs');
+  const panelsEl = document.getElementById('day-panels');
+  tabsEl.innerHTML = '';
+  panelsEl.innerHTML = '';
+  for (let d = 1; d <= itin.days; d++) {
+    const key = `D${d}`;
+    const items = itin.days_items[key] || [];
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (key===currentDay?' active':'');
+    btn.dataset.day = key;
+    btn.textContent = `第${d}天 (${items.length})`;
+    btn.onclick = () => { currentDay = key; renderDayTabs(); };
+    tabsEl.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.id = 'panel-' + key;
+    panel.className = 'tab-panel' + (key===currentDay?' active':'');
+    panel.innerHTML = renderDayPanel(key);
+    panelsEl.appendChild(panel);
+    bindDragEvents(panel, key);
+  }
+}
+
+function renderDayPanel(key) {
+  const items = Utils.sortItemsByTime(itin.days_items[key] || []);
+  const votes = itin.votes || {};
+  let html = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button class="btn btn-primary btn-sm" onclick="currentDay='${key}';openModal('modal-add-item')">＋ 新增項目</button>
+    </div>`;
+  if (!items.length) {
+    html += `<div class="empty-state" style="padding:40px 0;">
+      <div class="empty-icon">📍</div>
+      <div class="empty-title">尚未規劃景點</div>
+      <div class="empty-text">點擊上方「新增項目」開始安排行程</div>
+    </div>`;
+    return html;
+  }
+  html += `<div class="timeline" id="timeline-${key}">`;
+  items.forEach(item => {
+    const itemVotes = votes[item.id] ? Object.keys(votes[item.id]).length : 0;
+    const totalMembers = 1 + (itin.collaborators||[]).length;
+    const myVote = votes[item.id]?.[CURRENT_USER.id];
+    const isWinner = itemVotes >= totalMembers && totalMembers > 1;
+    html += `
+    <div class="timeline-item" id="ti-${item.id}" draggable="true" data-id="${item.id}" data-day="${key}">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card ${isWinner?'':''}">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <div class="item-type-icon type-${item.type}">${TYPE_ICONS[item.type]||'📌'}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+              <span class="fw-600">${item.name}</span>
+              <span class="tag ${item.priority==='must'?'tag-must':'tag-candidate'}">${item.priority==='must'?'⭐ 必去':'📌 候選'}</span>
+              ${isWinner?'<span class="vote-badge">🏆 最高票</span>':''}
+            </div>
+            <div class="text-sm text-muted" style="display:flex;gap:12px;flex-wrap:wrap;">
+              <span>🕐 ${item.time}</span>
+              <span>⏱ ${Utils.formatDuration(item.duration)}</span>
+              <span>新增者：${Utils.getUserName(item.addedBy)}</span>
+            </div>
+            ${item.note?`<div class="text-sm text-sub mt-2" style="background:var(--bg-alt);padding:6px 10px;border-radius:var(--r-sm);">📝 ${item.note}</div>`:''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button class="btn-icon" title="投票" onclick="toggleVote('${item.id}')">${myVote?'❤️':'🤍'} ${itemVotes}</button>
+            <button class="btn-icon" title="刪除" onclick="deleteItem('${key}','${item.id}')">🗑</button>
+          </div>
+        </div>
+        ${itemVotes>0?`<div class="vote-bar"><div class="vote-fill ${isWinner?'vote-winner':''}" style="width:${Math.min(100,itemVotes/totalMembers*100)}%"></div></div>`:''}
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function bindDragEvents(panel, key) {
+  panel.addEventListener('dragstart', e => {
+    const ti = e.target.closest('.timeline-item');
+    if (ti) { dragSrcId = ti.dataset.id; ti.querySelector('.timeline-card').classList.add('dragging'); }
+  });
+  panel.addEventListener('dragend', e => {
+    document.querySelectorAll('.timeline-card').forEach(c=>c.classList.remove('dragging','drag-over'));
+  });
+  panel.addEventListener('dragover', e => {
+    e.preventDefault();
+    const ti = e.target.closest('.timeline-item');
+    if (ti && ti.dataset.id !== dragSrcId) ti.querySelector('.timeline-card')?.classList.add('drag-over');
+  });
+  panel.addEventListener('dragleave', e => {
+    const ti = e.target.closest('.timeline-item');
+    if (ti) ti.querySelector('.timeline-card')?.classList.remove('drag-over');
+  });
+  panel.addEventListener('drop', e => {
+    e.preventDefault();
+    const ti = e.target.closest('.timeline-item');
+    if (!ti || !dragSrcId || ti.dataset.id === dragSrcId) return;
+    const items = itin.days_items[key];
+    const srcIdx = items.findIndex(i=>i.id===dragSrcId);
+    const dstIdx = items.findIndex(i=>i.id===ti.dataset.id);
+    if (srcIdx<0||dstIdx<0) return;
+    const [moved] = items.splice(srcIdx, 1);
+    items.splice(dstIdx, 0, moved);
+    save();
+    renderDayTabs();
+    showToast('排序已更新', 'success');
+  });
+}
+
+/* ======= Add Item ======= */
+function addItem() {
+  const name = document.getElementById('item-name').value.trim();
+  if (!name) { showToast('請輸入名稱', 'error'); return; }
+  const item = {
+    id: Utils.genId('item'),
+    name,
+    type: document.getElementById('item-type').value,
+    priority: document.getElementById('item-priority').value,
+    time: document.getElementById('item-time').value,
+    duration: parseInt(document.getElementById('item-duration').value)||60,
+    note: document.getElementById('item-note').value.trim(),
+    addedBy: CURRENT_USER.id,
+  };
+  // Show region warning (mock: any item with "台北" gets warning)
+  if (name.includes('台北')||name.includes('台中')||name.includes('高雄')) {
+    document.getElementById('item-region-warn').classList.remove('hidden');
+  }
+  if (!itin.days_items[currentDay]) itin.days_items[currentDay] = [];
+  itin.days_items[currentDay].push(item);
+  save();
+  closeModal('modal-add-item');
+  document.getElementById('item-name').value='';
+  document.getElementById('item-note').value='';
+  document.getElementById('item-region-warn').classList.add('hidden');
+  renderDayTabs();
+  showToast(`已新增「${name}」到 ${currentDay}`, 'success');
+}
+
+/* ======= Delete Item ======= */
+async function deleteItem(day, itemId) {
+  const item = itin.days_items[day].find(i=>i.id===itemId);
+  const ok = await confirmDialog(`確認刪除「${item?.name||'此項目'}」？`);
+  if (!ok) return;
+  itin.days_items[day] = itin.days_items[day].filter(i=>i.id!==itemId);
+  if (itin.votes[itemId]) delete itin.votes[itemId];
+  save();
+  renderDayTabs();
+  showToast('已刪除', 'success');
+}
+
+/* ======= Vote ======= */
+function toggleVote(itemId) {
+  if (!itin.votes[itemId]) itin.votes[itemId] = {};
+  if (itin.votes[itemId][CURRENT_USER.id]) delete itin.votes[itemId][CURRENT_USER.id];
+  else itin.votes[itemId][CURRENT_USER.id] = true;
+  save();
+  renderDayTabs();
+}
+
+/* ======= Budget ======= */
+function renderBudget() {
+  const spent = Utils.calcTotalExpense(itin.expenses);
+  const budget = itin.budget || 0;
+  const pct = budget > 0 ? Math.min(100, spent/budget*100) : 0;
+  const exceeded = Utils.isBudgetExceeded(spent, budget);
+  const near = Utils.isBudgetNear(spent, budget);
+  let html = '';
+  if (budget > 0) {
+    html += `
+    <div class="flex justify-between text-sm mb-2">
+      <span class="text-muted">已花費</span>
+      <span class="fw-600 ${exceeded?'text-danger':near?'text-warning':'text-primary'}">${Utils.formatCurrency(spent)}</span>
+    </div>
+    <div class="budget-bar">
+      <div class="budget-fill ${exceeded?'over':near?'near':''}" style="width:${pct}%"></div>
+    </div>
+    <div class="flex justify-between text-xs text-muted">
+      <span>預算：${Utils.formatCurrency(budget)}</span>
+      <span>${pct.toFixed(0)}%</span>
+    </div>`;
+    if (exceeded) html += `<div class="alert alert-danger mt-3"><span class="alert-icon">⚠</span><span>已超出預算！超支 ${Utils.formatCurrency(spent-budget)}</span></div>`;
+    else if (near) html += `<div class="alert alert-warning mt-3"><span class="alert-icon">⚠</span><span>接近預算上限，剩餘 ${Utils.formatCurrency(budget-spent)}</span></div>`;
+  } else {
+    html = `<div class="text-sm text-muted">合計：${Utils.formatCurrency(spent)}</div>`;
+  }
+  document.getElementById('budget-display').innerHTML = html;
+
+  // Expense list
+  const expHtml = itin.expenses.length
+    ? itin.expenses.map(e=>`
+      <div class="expense-row">
+        <div style="flex:1;">
+          <div class="text-sm fw-500">${e.name}</div>
+          <div class="text-xs text-muted">${e.type} ・ ${Utils.getUserName(e.paidBy)}</div>
+        </div>
+        <div class="fw-600 text-primary">${Utils.formatCurrency(e.amount)}</div>
+        <button class="btn-icon" onclick="deleteExpense('${e.id}')">🗑</button>
+      </div>`).join('')
+    : '<div class="text-sm text-muted">尚無支出紀錄</div>';
+  document.getElementById('expense-list').innerHTML = expHtml;
+
+  // Split
+  const members = 1 + (itin.collaborators||[]).length;
+  if (spent > 0 && members > 1) {
+    const perPerson = Utils.calcBudgetSplit(spent, members);
+    document.getElementById('split-display').innerHTML = `
+      <div class="split-result">
+        <div class="text-sm text-sub mb-2">費用分攤（${members} 人平均）</div>
+        <div class="text-xl fw-700 text-primary">${Utils.formatCurrency(perPerson)} <span class="text-sm text-muted fw-400">/ 人</span></div>
+      </div>`;
+  } else document.getElementById('split-display').innerHTML='';
+}
+
+/* ======= Expense ======= */
+function addExpense() {
+  const name = document.getElementById('exp-name').value.trim();
+  const amount = parseInt(document.getElementById('exp-amount').value)||0;
+  if (!name||!amount) { showToast('請填寫名稱與金額', 'error'); return; }
+  itin.expenses.push({
+    id: Utils.genId('exp'), name, amount,
+    type: document.getElementById('exp-type').value,
+    paidBy: document.getElementById('exp-payer').value || CURRENT_USER.id,
+  });
+  save();
+  closeModal('modal-expense');
+  document.getElementById('exp-name').value='';
+  document.getElementById('exp-amount').value='';
+  renderBudget();
+  showToast('支出已記錄', 'success');
+}
+
+async function deleteExpense(id) {
+  const ok = await confirmDialog('確認刪除此支出紀錄？');
+  if (!ok) return;
+  itin.expenses = itin.expenses.filter(e=>e.id!==id);
+  save();
+  renderBudget();
+  showToast('已刪除', 'success');
+}
+
+/* ======= Collaborators ======= */
+function renderCollaborators() {
+  const members = [CURRENT_USER.id, ...(itin.collaborators||[])];
+  document.getElementById('collab-list').innerHTML = members.map(uid=>`
+    <div class="flex items-center gap-3 py-3" style="border-bottom:1px solid var(--border-light);">
+      <div class="collab-avatar">${Utils.getUserAvatar(uid)}</div>
+      <div>
+        <div class="text-sm fw-500">${Utils.getUserName(uid)}</div>
+        <div class="text-xs text-muted">${uid===itin.ownerId?'行程建立者':'旅伴'}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ======= Comments ======= */
+function renderComments() {
+  const comments = itin.comments||[];
+  document.getElementById('comment-list').innerHTML = comments.map(c=>`
+    <div>
+      <div class="chat-sender">${Utils.getUserName(c.userId)} ・ ${c.time}</div>
+      <div class="chat-bubble ${c.userId===CURRENT_USER.id?'me':'other'}">${c.text}</div>
+    </div>`).join('');
+  const el = document.getElementById('comment-list');
+  el.scrollTop = el.scrollHeight;
+}
+
+function addComment() {
+  const text = document.getElementById('comment-input').value.trim();
+  if (!text) return;
+  itin.comments.push({
+    id: Utils.genId('c'),
+    userId: CURRENT_USER.id,
+    text,
+    time: new Date().toLocaleString('zh-TW').replace(/\//g,'-'),
+  });
+  save();
+  document.getElementById('comment-input').value='';
+  renderComments();
+}
+
+/* ======= Linked Orders ======= */
+function renderLinkedOrders() {
+  const tickets = Store.getTrainTickets().filter(t=>t.itineraryId===itinId);
+  const orders = Store.getHousingOrders().filter(o=>o.itineraryId===itinId);
+  let html = '';
+  if (tickets.length) html += tickets.map(t=>`
+    <div class="flex items-center gap-3 py-2">
+      <span>🚂</span>
+      <div class="flex-1">
+        <div class="text-sm fw-500">${t.from}→${t.to} ${t.dep}</div>
+        <div class="text-xs text-muted">${t.date} ・ 車廂${t.seatCar}號${t.seatNo}</div>
+      </div>
+      <span class="badge badge-success">${Utils.formatCurrency(t.price)}</span>
+    </div>`).join('');
+  if (orders.length) html += orders.map(o=>`
+    <div class="flex items-center gap-3 py-2">
+      <span>🏨</span>
+      <div class="flex-1">
+        <div class="text-sm fw-500">${o.hotelName}</div>
+        <div class="text-xs text-muted">${o.checkIn} ~ ${o.checkOut}</div>
+      </div>
+      <span class="badge badge-success">${Utils.formatCurrency(o.totalAmount)}</span>
+    </div>`).join('');
+  if (!html) html = '<div class="text-sm text-muted">尚無關聯訂單<br><span class="text-xs">從行程頁前往訂票/訂房後會自動關聯</span></div>';
+  document.getElementById('linked-orders').innerHTML = html;
+}
+
+/* ======= Invite ======= */
+function sendInvite() {
+  const email = document.getElementById('invite-email').value.trim();
+  if (!email) { showToast('請輸入 Email', 'error'); return; }
+  const user = USERS.find(u=>u.email===email);
+  const resultEl = document.getElementById('invite-result');
+  resultEl.style.display = 'flex';
+  if (!user) {
+    resultEl.className = 'alert alert-danger mt-4';
+    resultEl.innerHTML = '<span class="alert-icon">✕</span><span>找不到此 Email 對應的會員，請確認對方已在平台註冊。</span>';
+    return;
+  }
+  if (user.id===CURRENT_USER.id) {
+    resultEl.className = 'alert alert-warning mt-4';
+    resultEl.innerHTML = '<span class="alert-icon">⚠</span><span>無法邀請自己</span>';
+    return;
+  }
+  if (!itin.collaborators.includes(user.id)) {
+    itin.collaborators.push(user.id);
+    save();
+    renderCollaborators();
+  }
+  resultEl.className = 'alert alert-success mt-4';
+  resultEl.innerHTML = `<span class="alert-icon">✓</span><span>已成功邀請 ${user.name} 加入行程！</span>`;
+  document.getElementById('invite-email').value='';
+}
+
+function shareReadonly() {
+  const url = `${location.href}&readonly=1`;
+  navigator.clipboard?.writeText(url).then(()=>showToast('唯讀連結已複製到剪貼板！', 'success'));
+  showToast('唯讀連結已產生！', 'success');
+}
+
+/* ======= Populate expense payer dropdown ======= */
+function populatePayerSelect() {
+  const members = [CURRENT_USER.id, ...(itin.collaborators||[])];
+  document.getElementById('exp-payer').innerHTML = members.map(uid=>
+    `<option value="${uid}">${Utils.getUserName(uid)}</option>`).join('');
+}
+
+/* ======= Init ======= */
+renderHeader();
+renderDayTabs();
+renderBudget();
+renderCollaborators();
+renderComments();
+renderLinkedOrders();
+populatePayerSelect();
+</script>
+</body>
+</html>

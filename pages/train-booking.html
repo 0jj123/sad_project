@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>台鐵訂票 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.booking-wrap{max-width:680px;margin:0 auto;}
+.timer-bar{background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.timer-count{font-size:20px;font-weight:700;color:var(--warning);font-variant-numeric:tabular-nums;}
+.step-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:24px;margin-bottom:20px;}
+.passenger-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;margin-bottom:12px;}
+.car-label{font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link active">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <a href="train-search.html" class="text-muted text-sm" style="display:inline-block;margin-bottom:8px;">← 返回查詢</a>
+      <h1 class="page-title">🎫 訂票流程</h1>
+    </div>
+  </div>
+
+  <div class="section">
+  <div class="container">
+  <div class="booking-wrap">
+
+    <!-- Stepper -->
+    <div class="stepper" id="stepper">
+      <div class="step active" id="step1-dot"><div class="step-dot">1</div><div class="step-label">選擇座位</div></div>
+      <div class="step"      id="step2-dot"><div class="step-dot">2</div><div class="step-label">乘客資料</div></div>
+      <div class="step"      id="step3-dot"><div class="step-dot">3</div><div class="step-label">付款</div></div>
+      <div class="step"      id="step4-dot"><div class="step-dot">4</div><div class="step-label">完成</div></div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-bar" id="timer-bar">
+      <span>⏱</span>
+      <span>座位已暫時鎖定，請在</span>
+      <span class="timer-count" id="timer">10:00</span>
+      <span>內完成付款</span>
+    </div>
+
+    <!-- Train Info Card -->
+    <div class="card mb-5" id="train-info-card"></div>
+
+    <!-- Step 1: Seat Selection -->
+    <div class="step-content" id="step-1">
+      <h3 class="fw-600 mb-4">選擇座位</h3>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+        <div>
+          <div class="car-label">第 <span id="car-no">3</span> 車廂</div>
+          <div class="seat-grid" id="seat-grid"></div>
+          <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--text-muted);">
+            <span>⬜ 可選</span><span style="color:var(--primary);">🟧 已選</span><span>⬛ 已售</span>
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <div class="alert alert-info mb-4">
+            <span class="alert-icon">ℹ</span>
+            <span>點擊座位圖選位，或點擊「自動配位」讓系統幫您安排。</span>
+          </div>
+          <button class="btn btn-secondary btn-full mb-3" onclick="autoAssign()">🎲 自動配位</button>
+          <div id="selected-seat-display" class="text-sm text-muted text-center"></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button class="btn btn-primary" id="btn-to-2" onclick="goStep(2)" disabled>下一步：填寫乘客資料 →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Passenger Info -->
+    <div class="step-content hidden" id="step-2">
+      <h3 class="fw-600 mb-4">乘客資料</h3>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">乘客姓名 *</label>
+          <input class="form-control" id="p-name" value="張靖程" placeholder="請輸入真實姓名">
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">身份證字號 *</label>
+            <input class="form-control" id="p-id" value="A123456789" placeholder="A123456789">
+          </div>
+          <div class="form-group">
+            <label class="form-label">聯絡電話 *</label>
+            <input class="form-control" id="p-phone" value="0912345678" placeholder="0912345678">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email（接收電子票券）</label>
+          <input class="form-control" id="p-email" value="justin941108@gmail.com" type="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">票種折扣身份</label>
+          <select class="form-control" id="p-discount">
+            <option value="1.0">無折扣（全票）</option>
+            <option value="0.8">學生（8折）</option>
+            <option value="0.9">早鳥 30 天（9折）</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px;">
+        <button class="btn btn-secondary" onclick="goStep(1)">← 返回選位</button>
+        <button class="btn btn-primary" onclick="goStep(3)">下一步：付款 →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment -->
+    <div class="step-content hidden" id="step-3">
+      <h3 class="fw-600 mb-4">確認訂單與付款</h3>
+      <div id="order-summary" style="margin-bottom:20px;"></div>
+      <h4 class="fw-600 mb-3">選擇付款方式</h4>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="pay-opt active" data-pay="信用卡" onclick="setPay(this)">💳 信用卡</button>
+        <button class="pay-opt" data-pay="電子支付" onclick="setPay(this)">📱 電子支付</button>
+        <button class="pay-opt" data-pay="ATM轉帳" onclick="setPay(this)">🏦 ATM轉帳</button>
+      </div>
+      <div class="alert alert-warning" id="lock-warning" style="display:none;">
+        <span class="alert-icon">⚠</span><span>鎖位時間即將到期，請盡快完成付款！</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px;">
+        <button class="btn btn-secondary" onclick="goStep(2)">← 返回</button>
+        <button class="btn btn-primary btn-lg" onclick="doPay()">立即付款 →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Done -->
+    <div class="step-content hidden" id="step-4">
+      <div style="text-align:center;padding:20px 0;">
+        <div style="font-size:64px;margin-bottom:16px;">🎉</div>
+        <h2 class="fw-700 mb-2" style="font-size:22px;">訂票成功！</h2>
+        <p class="text-muted mb-5">電子票券已發送至您的 Email 與 App</p>
+        <div id="ticket-preview" style="background:var(--surface-warm);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;max-width:360px;margin:0 auto 24px;"></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <a href="train-tickets.html" class="btn btn-primary">查看我的車票</a>
+          <a href="train-search.html" class="btn btn-secondary">繼續查詢</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+  </div>
+</main>
+</div>
+
+<style>
+.pay-opt{padding:10px 20px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);font-size:14px;cursor:pointer;transition:var(--t);}
+.pay-opt.active{border-color:var(--primary);background:var(--primary-ghost);color:var(--primary);font-weight:600;}
+</style>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+const params = new URLSearchParams(location.search);
+const scheduleId = params.get('sid') || 'tr009';
+const ticketType = params.get('type') || 'full';
+const travelDate = params.get('date') || Utils.today();
+
+const schedule = TRAIN_SCHEDULES.find(s=>s.id===scheduleId);
+if (!schedule) { showToast('找不到班次資料','error'); }
+
+const fromName = Utils.getStationName(schedule?.from||'');
+const toName   = Utils.getStationName(schedule?.to||'');
+const price    = schedule?.price[ticketType] || schedule?.price.full || 0;
+
+let currentStep = 1;
+let selectedSeat = null;
+let selectedPay  = '信用卡';
+let lockStart = Date.now();
+let timerInterval;
+
+// Render train info
+document.getElementById('train-info-card').innerHTML = `
+  <div class="card-body">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div style="text-align:center;">
+        <div style="font-size:22px;font-weight:700;">${schedule?.dep||'—'}</div>
+        <div class="text-muted text-sm">${fromName}</div>
+      </div>
+      <div style="flex:1;text-align:center;">
+        <div class="text-muted text-sm">${Utils.formatDuration(schedule?.duration||0)}</div>
+        <div style="height:2px;background:var(--border);margin:4px 0;"></div>
+        <div class="text-xs text-muted">${schedule?.type||''} #${schedule?.trainNo||''}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:22px;font-weight:700;">${schedule?.arr||'—'}</div>
+        <div class="text-muted text-sm">${toName}</div>
+      </div>
+      <div style="text-align:right;margin-left:auto;">
+        <div style="font-size:22px;font-weight:700;color:var(--primary);">${Utils.formatCurrency(price)}</div>
+        <div class="text-xs text-muted">${travelDate} ・ ${ticketType==='full'?'全票':ticketType==='half'?'半票':'孩童票'}</div>
+      </div>
+    </div>
+  </div>`;
+
+// Build seat grid
+const OCCUPIED = ['1A','1B','2C','3B','4A','4C','5B','6A','7C','8B','9A','10C'];
+const ROWS=10, COLS=['A','B','C','D','E'];
+let seatGrid = document.getElementById('seat-grid');
+for (let r=1;r<=ROWS;r++) {
+  COLS.forEach(c=>{
+    const label=`${r}${c}`;
+    const occ=OCCUPIED.includes(label);
+    const seat=document.createElement('div');
+    seat.className='seat'+(occ?' occupied':'');
+    seat.textContent=label;
+    seat.dataset.seat=label;
+    if (!occ) seat.onclick=()=>selectSeat(label);
+    seatGrid.appendChild(seat);
+  });
+}
+
+function selectSeat(label) {
+  selectedSeat = label;
+  document.querySelectorAll('.seat:not(.occupied)').forEach(s=>{
+    s.classList.toggle('selected', s.dataset.seat===label);
+  });
+  document.getElementById('selected-seat-display').innerHTML = `已選：<strong>車廂 ${document.getElementById('car-no').textContent} 號 ${label} 座</strong>`;
+  document.getElementById('btn-to-2').disabled=false;
+}
+
+function autoAssign() {
+  const avail = [...document.querySelectorAll('.seat:not(.occupied)')].map(s=>s.dataset.seat);
+  if (!avail.length) { showToast('此車廂已無空位','error'); return; }
+  const pick = avail[Math.floor(Math.random()*avail.length)];
+  selectSeat(pick);
+  showToast(`已自動配位：${pick} 座`, 'success');
+}
+
+function goStep(n) {
+  // Validate
+  if (n===2 && !selectedSeat) { showToast('請選擇或自動配位座位','error'); return; }
+  if (n===3) {
+    const pname = document.getElementById('p-name').value.trim();
+    const pid   = document.getElementById('p-id').value.trim();
+    const pphone= document.getElementById('p-phone').value.trim();
+    if (!pname||!pid||!pphone) { showToast('請填寫完整乘客資料','error'); return; }
+  }
+
+  currentStep = n;
+  for (let i=1;i<=4;i++) {
+    const panel = document.getElementById('step-'+i);
+    panel.classList.toggle('hidden', i!==n);
+    const dot = document.getElementById('step'+i+'-dot');
+    dot.className = 'step' + (i<n?' done':i===n?' active':'');
+  }
+
+  if (n===3) renderOrderSummary();
+  if (n===4) { clearInterval(timerInterval); document.getElementById('timer-bar').style.display='none'; renderTicketPreview(); }
+}
+
+function renderOrderSummary() {
+  const discount = parseFloat(document.getElementById('p-discount').value)||1;
+  const finalPrice = Utils.applyBestDiscount(price, [discount]);
+  document.getElementById('order-summary').innerHTML = `
+    <div style="background:var(--surface-warm);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;">
+      <div class="flex justify-between text-sm"><span class="text-muted">路線</span><span class="fw-500">${fromName} → ${toName}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">日期/時間</span><span class="fw-500">${travelDate} ${schedule?.dep||''}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">車次</span><span class="fw-500">${schedule?.type} #${schedule?.trainNo}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">座位</span><span class="fw-500">車廂 ${document.getElementById('car-no').textContent} 號 ${selectedSeat}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">乘客</span><span class="fw-500">${document.getElementById('p-name').value}</span></div>
+      <div class="divider" style="margin:4px 0;"></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">票價</span><span>${Utils.formatCurrency(price)}</span></div>
+      ${discount<1?`<div class="flex justify-between text-sm text-success"><span>折扣</span><span>-${Utils.formatCurrency(price-finalPrice)}</span></div>`:''}
+      <div class="flex justify-between fw-700 text-lg"><span>合計</span><span style="color:var(--primary);">${Utils.formatCurrency(finalPrice)}</span></div>
+    </div>`;
+  window._finalPrice = finalPrice;
+}
+
+function setPay(btn) {
+  selectedPay = btn.dataset.pay;
+  document.querySelectorAll('.pay-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function doPay() {
+  const newTicket = {
+    id: Utils.genId('tt'),
+    scheduleId, userId: CURRENT_USER.id,
+    trainNo: schedule.trainNo, type: schedule.type,
+    from: fromName, to: toName,
+    dep: schedule.dep, arr: schedule.arr, date: travelDate,
+    seatCar: parseInt(document.getElementById('car-no').textContent),
+    seatNo: selectedSeat, ticketType: ticketType==='full'?'全票':ticketType==='half'?'半票':'孩童票',
+    price: window._finalPrice || price,
+    status: '已付款',
+    qrCode: `TT-${schedule.trainNo}-${travelDate.replace(/-/g,'')}-${selectedSeat}-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+    canRefund: true, canChange: true, canTransfer: true,
+    itineraryId: null,
+  };
+  Store.addTrainTicket(newTicket);
+  window._newTicket = newTicket;
+  goStep(4);
+  showToast('訂票成功！電子票券已產生', 'success');
+}
+
+function renderTicketPreview() {
+  const t = window._newTicket;
+  if (!t) return;
+  document.getElementById('ticket-preview').innerHTML = `
+    <div style="text-align:left;">
+      <div class="fw-700" style="font-size:16px;margin-bottom:12px;">🎫 電子乘車憑證</div>
+      <div class="text-sm" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+        <div class="flex justify-between"><span class="text-muted">路線</span><span class="fw-500">${t.from} → ${t.to}</span></div>
+        <div class="flex justify-between"><span class="text-muted">日期</span><span class="fw-500">${t.date}</span></div>
+        <div class="flex justify-between"><span class="text-muted">時間</span><span class="fw-500">${t.dep} → ${t.arr}</span></div>
+        <div class="flex justify-between"><span class="text-muted">車廂/座位</span><span class="fw-500">${t.seatCar}車 ${t.seatNo}</span></div>
+        <div class="flex justify-between"><span class="text-muted">票種</span><span class="fw-500">${t.ticketType}</span></div>
+        <div class="flex justify-between"><span class="text-muted">票價</span><span class="fw-700 text-primary">${Utils.formatCurrency(t.price)}</span></div>
+      </div>
+      <div style="display:flex;justify-content:center;">
+        <div class="qr-wrap">
+          <div class="qr-grid" id="qr-cells"></div>
+        </div>
+      </div>
+      <div class="text-xs text-muted text-center mt-3">${t.qrCode}</div>
+    </div>`;
+  genQR();
+}
+
+function genQR() {
+  // Deterministic pseudo-QR pattern based on ticket code
+  const cells = document.getElementById('qr-cells');
+  if (!cells) return;
+  const pattern=[1,1,1,1,1,1,1,0,1,0, 1,0,0,0,1,0,1,0,0,1, 1,0,1,0,1,0,1,1,0,0, 1,0,0,0,1,0,1,0,1,1, 1,1,1,1,1,1,1,0,0,1, 0,0,0,0,0,0,0,1,1,0, 1,0,1,0,1,0,1,1,0,1, 0,1,0,1,1,0,0,0,1,0, 1,1,0,0,1,1,0,1,0,0, 0,0,1,1,0,0,1,0,1,1];
+  cells.innerHTML = pattern.map(b=>`<div class="qr-cell ${b?'b':''}"></div>`).join('');
+}
+
+// Countdown timer
+function startTimer() {
+  let secs = 600;
+  timerInterval = setInterval(()=>{
+    secs--;
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+    if (secs <= 60) document.getElementById('lock-warning').style.display='flex';
+    if (secs <= 0) {
+      clearInterval(timerInterval);
+      showToast('鎖位時間已到，請重新選票','error');
+      setTimeout(()=>location.href='train-search.html', 2000);
+    }
+  }, 1000);
+}
+startTimer();
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>我的訂單 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px;margin-bottom:16px;}
+.order-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.order-id{font-size:12px;color:var(--text-muted);font-family:var(--font-mono,monospace);}
+.refund-rule{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:14px;}
+.refund-rule:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>智慧旅遊平台</span></a>
+    <nav class="navbar-nav">
+      <a href="../index.html" class="nav-link">🏠 首頁</a>
+      <a href="itinerary-list.html" class="nav-link">📅 行程規劃</a>
+      <a href="housing-search.html" class="nav-link active">🏨 住宿訂房</a>
+      <a href="train-search.html" class="nav-link">🚂 台鐵車票</a>
+    </nav>
+    <div class="navbar-right">
+      <span class="points-badge" id="nav-points">⭐ 載入中</span>
+      <div class="avatar">JJ</div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-header-inner" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 class="page-title">🧾 住宿訂單</h1>
+        <p class="page-subtitle">管理你的住宿預訂與退款申請</p>
+      </div>
+      <a href="housing-search.html" class="btn btn-primary">＋ 新增訂房</a>
+    </div>
+  </div>
+
+  <div class="section">
+  <div class="container" style="max-width:800px;">
+
+    <div class="filter-chips" id="status-chips">
+      <button class="chip active" data-s="全部">全部</button>
+      <button class="chip" data-s="已付款">已付款</button>
+      <button class="chip" data-s="已完成">已完成</button>
+      <button class="chip" data-s="未付款">未付款</button>
+      <button class="chip" data-s="退款中">退款中</button>
+      <button class="chip" data-s="已取消">已取消</button>
+    </div>
+
+    <div id="order-list"></div>
+    <div id="order-empty" class="empty-state hidden">
+      <div class="empty-icon">🧾</div>
+      <div class="empty-title">目前沒有訂單</div>
+      <div class="empty-text">前往住宿搜尋頁面開始預訂</div>
+      <a href="housing-search.html" class="btn btn-primary">搜尋住宿</a>
+    </div>
+
+  </div>
+  </div>
+</main>
+</div>
+
+<!-- Modal: 退款申請 -->
+<div class="modal-overlay" id="modal-refund">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">退款申請</span>
+      <button class="btn-icon" onclick="closeModal('modal-refund')">✕</button>
+    </div>
+    <div class="modal-body" id="refund-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-refund')">取消</button>
+      <button class="btn btn-danger" id="refund-confirm-btn">確認申請退款</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 訂單詳情 -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">訂單詳情</span>
+      <button class="btn-icon" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-detail')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+
+const STATUS_BADGE = {
+  '已付款':'badge-success','已完成':'badge-muted','未付款':'badge-warning',
+  '退款中':'badge-danger','已取消':'badge-muted','取消中':'badge-danger'
+};
+
+let currentFilter = '全部';
+
+function renderOrders() {
+  const all = Store.getHousingOrders().filter(o=>o.userId===CURRENT_USER.id);
+  const list = currentFilter==='全部' ? all : all.filter(o=>o.status===currentFilter);
+  const el = document.getElementById('order-list');
+  const empty = document.getElementById('order-empty');
+  if (!list.length) { el.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  el.innerHTML = list.map(o=>{
+    const hotel = HOTELS.find(h=>h.id===o.hotelId)||{};
+    const daysBeforeCheckin = Utils.daysBetween(Utils.today(), o.checkIn);
+    const refundRate = Utils.calcHousingRefundRate(daysBeforeCheckin);
+    const refundAmount = Math.round(o.totalAmount * refundRate);
+    const canRefund = o.status==='已付款' && daysBeforeCheckin >= 0;
+
+    return `
+    <div class="order-card">
+      <div class="order-header">
+        <div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${o.hotelName}</div>
+          <div class="order-id">訂單編號：${o.id.toUpperCase()}</div>
+        </div>
+        <span class="badge ${STATUS_BADGE[o.status]||'badge-muted'}">${o.status}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div>
+          <div class="text-xs text-muted">房型</div>
+          <div class="text-sm fw-500">${o.roomName}</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">入住日期</div>
+          <div class="text-sm fw-500">${o.checkIn}</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">退房日期</div>
+          <div class="text-sm fw-500">${o.checkOut}</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">入住人數</div>
+          <div class="text-sm fw-500">${o.guests} 人</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">付款方式</div>
+          <div class="text-sm fw-500">${o.payMethod}</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">總金額</div>
+          <div class="text-sm fw-700 text-primary">${Utils.formatCurrency(o.totalAmount)}</div>
+        </div>
+      </div>
+      ${canRefund && daysBeforeCheckin < 10 && daysBeforeCheckin >= 0 ? `
+        <div class="alert alert-warning" style="margin-bottom:12px;">
+          <span class="alert-icon">⚠</span>
+          <span>距入住還有 ${daysBeforeCheckin} 天，退款將收取費用，實際退款 ${Utils.formatCurrency(refundAmount)}。</span>
+        </div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="showDetail('${o.id}')">查看詳情</button>
+        ${canRefund ? `<button class="btn btn-danger btn-sm" onclick="showRefund('${o.id}')">申請退款</button>` : ''}
+        ${o.status==='已付款' ? `<a href="housing-detail.html?id=${o.hotelId}" class="btn btn-outline btn-sm">查看房源</a>` : ''}
+        ${o.status==='已完成' ? `<button class="btn btn-ghost btn-sm" onclick="showReview('${o.id}')">✍️ 撰寫評價</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDetail(orderId) {
+  const o = Store.getHousingOrders().find(o=>o.id===orderId);
+  if (!o) return;
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="flex justify-between text-sm"><span class="text-muted">住宿名稱</span><span class="fw-500">${o.hotelName}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">房型</span><span class="fw-500">${o.roomName}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">入住</span><span class="fw-500">${o.checkIn}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">退房</span><span class="fw-500">${o.checkOut}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">人數</span><span class="fw-500">${o.guests} 人</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">付款方式</span><span class="fw-500">${o.payMethod}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">付款時間</span><span class="fw-500">${o.paidAt||'—'}</span></div>
+      <div class="divider" style="margin:4px 0;"></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">房費</span><span>${Utils.formatCurrency(o.roomPrice*((o.nights)||1))}</span></div>
+      ${o.discount?`<div class="flex justify-between text-sm text-success"><span>折扣</span><span>-${Utils.formatCurrency(o.discount)}</span></div>`:''}
+      <div class="flex justify-between fw-700"><span>總計</span><span style="color:var(--primary);">${Utils.formatCurrency(o.totalAmount)}</span></div>
+      <div style="margin-top:8px;"><span class="badge ${STATUS_BADGE[o.status]||'badge-muted'}" style="font-size:13px;">${o.status}</span></div>
+    </div>`;
+  openModal('modal-detail');
+}
+
+function showRefund(orderId) {
+  const o = Store.getHousingOrders().find(o=>o.id===orderId);
+  if (!o) return;
+  const days = Utils.daysBetween(Utils.today(), o.checkIn);
+  const rate = Utils.calcHousingRefundRate(days);
+  const refund = Math.round(o.totalAmount * rate);
+  const fee = o.totalAmount - refund;
+
+  document.getElementById('refund-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="alert alert-warning">
+        <span class="alert-icon">⚠</span>
+        <div>
+          <div class="fw-500 mb-1">退款政策說明</div>
+          <div class="refund-rule"><span class="badge badge-success">全額退款</span><span>入住前 10 天以上</span></div>
+          <div class="refund-rule"><span class="badge badge-warning">退 70%</span><span>入住前 4–9 天</span></div>
+          <div class="refund-rule"><span class="badge badge-danger">不退款</span><span>入住前 3 天內</span></div>
+        </div>
+      </div>
+      <div class="flex justify-between text-sm"><span class="text-muted">訂單金額</span><span class="fw-500">${Utils.formatCurrency(o.totalAmount)}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">距入住天數</span><span class="fw-500">${days} 天</span></div>
+      <div class="flex justify-between text-sm"><span class="text-muted">退款比例</span><span class="fw-500">${(rate*100).toFixed(0)}%</span></div>
+      ${fee>0?`<div class="flex justify-between text-sm text-danger"><span>手續費用</span><span>-${Utils.formatCurrency(fee)}</span></div>`:''}
+      <div class="divider" style="margin:4px 0;"></div>
+      <div class="flex justify-between fw-700 text-lg ${rate===0?'text-danger':'text-success'}">
+        <span>實際退款</span><span>${Utils.formatCurrency(refund)}</span>
+      </div>
+      ${rate===0?'<div class="alert alert-danger"><span class="alert-icon">✕</span><span>因入住日期過近，此訂單不予退款。</span></div>':''}
+    </div>`;
+
+  document.getElementById('refund-confirm-btn').disabled = rate===0;
+  document.getElementById('refund-confirm-btn').onclick = () => applyRefund(orderId, refund);
+  openModal('modal-refund');
+}
+
+function applyRefund(orderId, refundAmount) {
+  Store.updateHousingOrder(orderId, { status:'退款中' });
+  closeModal('modal-refund');
+  renderOrders();
+  showToast(`退款申請已送出，將退回 ${Utils.formatCurrency(refundAmount)}`, 'success');
+}
+
+function showReview(orderId) {
+  showToast('感謝您的好評！（評價功能示意）', 'success');
+}
+
+// Filter chips
+document.getElementById('status-chips').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#status-chips .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  currentFilter = chip.dataset.s;
+  renderOrders();
+});
+
+renderOrders();
+</script>
+</body>
+</html>
