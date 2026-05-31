@@ -296,7 +296,7 @@ function initTabs(containerId) {
       container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       const target = tab.dataset.tab;
-      container.querySelectorAll('.tab-panel').forEach(p => {
+      document.querySelectorAll('.tab-panel').forEach(p => {
         p.classList.toggle('active', p.id === target);
       });
     });
