@@ -301,7 +301,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   .container{padding:0 var(--s4);}
   .page-title{font-size:20px;}
   .search-box{padding:var(--s4);}
-  .form-control{min-width:0;}
+  .form-control{min-width:0;font-size:16px;}
   .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{flex-shrink:0;}
