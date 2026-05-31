@@ -220,21 +220,36 @@ document.getElementById('train-info-card').innerHTML = `
     </div>
   </div>`;
 
-// Build seat grid
+// Build seat grid (2+2 layout: AB | aisle | CD)
 const OCCUPIED = ['1A','1B','2C','3B','4A','4C','5B','6A','7C','8B','9A','10C'];
-const ROWS=10, COLS=['A','B','C','D','E'];
+const ROWS=10, COLS_LEFT=['A','B'], COLS_RIGHT=['C','D'];
 let seatGrid = document.getElementById('seat-grid');
+
+// Column headers row
+['A','B','','C','D'].forEach(h=>{
+  const hdr=document.createElement('div');
+  hdr.style.cssText='text-align:center;font-size:11px;font-weight:600;color:var(--text-muted);padding-bottom:4px;';
+  hdr.textContent=h;
+  seatGrid.appendChild(hdr);
+});
+
+function makeSeat(label) {
+  const occ=OCCUPIED.includes(label);
+  const seat=document.createElement('div');
+  seat.className='seat'+(occ?' occupied':'');
+  seat.textContent=label;
+  seat.dataset.seat=label;
+  if (!occ) seat.onclick=()=>selectSeat(label);
+  return seat;
+}
+
 for (let r=1;r<=ROWS;r++) {
-  COLS.forEach(c=>{
-    const label=`${r}${c}`;
-    const occ=OCCUPIED.includes(label);
-    const seat=document.createElement('div');
-    seat.className='seat'+(occ?' occupied':'');
-    seat.textContent=label;
-    seat.dataset.seat=label;
-    if (!occ) seat.onclick=()=>selectSeat(label);
-    seatGrid.appendChild(seat);
-  });
+  COLS_LEFT.forEach(c=>seatGrid.appendChild(makeSeat(`${r}${c}`)));
+  // Aisle
+  const aisle=document.createElement('div');
+  aisle.className='seat-aisle';
+  seatGrid.appendChild(aisle);
+  COLS_RIGHT.forEach(c=>seatGrid.appendChild(makeSeat(`${r}${c}`)));
 }
 
 function selectSeat(label) {
