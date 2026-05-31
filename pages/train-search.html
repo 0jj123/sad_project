@@ -52,18 +52,18 @@
     <!-- Search Box -->
     <div class="search-box">
       <div class="form-row form-row-4" style="gap:12px;align-items:flex-end;margin-bottom:12px;">
-        <div class="form-group">
+        <div class="form-group" style="position:relative;">
           <label class="form-label">出發站</label>
           <select class="form-control" id="f-from">
             <option value="">請選擇</option>
           </select>
+          <button style="position:absolute;right:-20px;top:28px;background:none;border:none;font-size:18px;cursor:pointer;z-index:1;" onclick="swapStations()" title="互換">⇄</button>
         </div>
-        <div class="form-group" style="position:relative;">
+        <div class="form-group">
           <label class="form-label">目的站</label>
           <select class="form-control" id="f-to">
             <option value="">請選擇</option>
           </select>
-          <button style="position:absolute;right:-20px;top:28px;background:none;border:none;font-size:18px;cursor:pointer;z-index:1;" onclick="swapStations()" title="互換">⇄</button>
         </div>
         <div class="form-group">
           <label class="form-label">乘車日期</label>
