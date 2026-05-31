@@ -19,11 +19,7 @@ const Store = {
       this._set('initialized', true);
     }
     if (!this._get('registered_users')) {
-      this._set('registered_users', [
-        { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', password:'demo1234', avatar:'JJ' },
-        { id:'u002', name:'林小明',      email:'ming@example.com',        password:'demo1234', avatar:'明' },
-        { id:'u003', name:'陳小華',      email:'hua@example.com',         password:'demo1234', avatar:'華' },
-      ]);
+      this._set('registered_users', []);
     }
   },
 
@@ -118,13 +114,13 @@ const Store = {
   getRegisteredUsers() { return this._get('registered_users') || []; },
   registerUser(user) {
     const users = this.getRegisteredUsers();
-    if (users.find(u => u.email === user.email)) return false;
+    if (users.find(u => u.account === user.account)) return false;
     users.push(user);
     this._set('registered_users', users);
     return true;
   },
-  loginUser(email, password) {
-    return this.getRegisteredUsers().find(u => u.email === email && u.password === password) || null;
+  loginUser(account, password) {
+    return this.getRegisteredUsers().find(u => u.account === account && u.password === password) || null;
   },
 
   /* Ticket Purchase Count（滿5次贈30點，退票不計） */

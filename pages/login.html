@@ -15,8 +15,6 @@
 .auth-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
 .auth-panel{display:none;}
 .auth-panel.active{display:block;}
-.demo-hint{background:#FFF8F0;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:20px;font-size:13px;color:var(--text-muted);line-height:1.6;}
-.demo-hint strong{color:var(--text-sub);}
 </style>
 </head>
 <body>
@@ -34,14 +32,9 @@
 
     <!-- 登入 -->
     <div class="auth-panel active" id="panel-login">
-      <div class="demo-hint">
-        <strong>示範帳號：</strong><br>
-        帳號：justin941108@gmail.com<br>
-        密碼：demo1234
-      </div>
       <div class="form-group">
-        <label class="form-label">電子郵件</label>
-        <input class="form-control" id="login-email" type="email" placeholder="請輸入電子郵件">
+        <label class="form-label">帳號</label>
+        <input class="form-control" id="login-account" type="text" placeholder="請輸入帳號">
       </div>
       <div class="form-group">
         <label class="form-label">密碼</label>
@@ -57,8 +50,8 @@
         <input class="form-control" id="reg-name" type="text" placeholder="請輸入姓名">
       </div>
       <div class="form-group">
-        <label class="form-label">電子郵件</label>
-        <input class="form-control" id="reg-email" type="email" placeholder="請輸入電子郵件">
+        <label class="form-label">帳號</label>
+        <input class="form-control" id="reg-account" type="text" placeholder="請輸入帳號（至少 4 碼）">
       </div>
       <div class="form-group">
         <label class="form-label">密碼</label>
@@ -97,41 +90,41 @@ function switchTab(tab) {
 }
 
 function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pw    = document.getElementById('login-pw').value;
-  if (!email || !pw) { showToast('請填寫帳號與密碼', 'error'); return; }
-  const user = Store.loginUser(email, pw);
+  const account = document.getElementById('login-account').value.trim();
+  const pw      = document.getElementById('login-pw').value;
+  if (!account || !pw) { showToast('請填寫帳號與密碼', 'error'); return; }
+  const user = Store.loginUser(account, pw);
   if (!user) { showToast('帳號或密碼錯誤', 'error'); return; }
-  const session = { id: user.id, name: user.name, email: user.email, avatar: user.avatar };
+  const session = { id: user.id, name: user.name, account: user.account, avatar: user.avatar };
   Store.setSession(session);
   showToast(`歡迎回來，${user.name}！`, 'success');
   setTimeout(() => { window.location.href = '../index.html'; }, 800);
 }
 
 function doRegister() {
-  const name  = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const pw    = document.getElementById('reg-pw').value;
-  const pw2   = document.getElementById('reg-pw2').value;
-  if (!name || !email || !pw) { showToast('請填寫所有欄位', 'error'); return; }
+  const name    = document.getElementById('reg-name').value.trim();
+  const account = document.getElementById('reg-account').value.trim();
+  const pw      = document.getElementById('reg-pw').value;
+  const pw2     = document.getElementById('reg-pw2').value;
+  if (!name || !account || !pw) { showToast('請填寫所有欄位', 'error'); return; }
+  if (account.length < 4) { showToast('帳號至少需要 4 個字元', 'error'); return; }
   if (pw.length < 6) { showToast('密碼至少需要 6 個字元', 'error'); return; }
   if (pw !== pw2)    { showToast('兩次密碼不一致', 'error'); return; }
-  const avatarChar = name.slice(-2);
   const newUser = {
     id: Utils.genId('u'),
-    name, email, password: pw,
-    avatar: avatarChar,
+    name, account, password: pw,
+    avatar: name.slice(0, 2),
   };
   const ok = Store.registerUser(newUser);
-  if (!ok) { showToast('此電子郵件已被使用', 'error'); return; }
+  if (!ok) { showToast('此帳號已被使用', 'error'); return; }
   showToast('註冊成功！請登入', 'success');
   setTimeout(() => {
     document.getElementById('reg-name').value = '';
-    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-account').value = '';
     document.getElementById('reg-pw').value = '';
     document.getElementById('reg-pw2').value = '';
     switchTab('login');
-    document.getElementById('login-email').value = email;
+    document.getElementById('login-account').value = account;
   }, 600);
 }
 </script>
