@@ -11,6 +11,9 @@
 .step-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:24px;margin-bottom:20px;}
 .passenger-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;margin-bottom:12px;}
 .car-label{font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:4px;}
+.seat-legend-box{display:inline-block;width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border);background:var(--surface);vertical-align:middle;margin-right:4px;}
+.seat-legend-box.sel{background:var(--primary);border-color:var(--primary);}
+.seat-legend-box.occ{background:var(--bg-alt);border-color:var(--border);opacity:.6;}
 </style>
 </head>
 <body>
@@ -69,8 +72,10 @@
         <div>
           <div class="car-label">第 <span id="car-no">3</span> 車廂</div>
           <div class="seat-grid" id="seat-grid"></div>
-          <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--text-muted);">
-            <span>⬜ 可選</span><span style="color:var(--primary);">🟧 已選</span><span>⬛ 已售</span>
+          <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--text-muted);align-items:center;">
+            <span><span class="seat-legend-box"></span>可選</span>
+            <span><span class="seat-legend-box sel"></span>已選</span>
+            <span><span class="seat-legend-box occ"></span>已售</span>
           </div>
         </div>
         <div style="flex:1;min-width:180px;">
