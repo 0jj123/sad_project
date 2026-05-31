@@ -37,7 +37,7 @@
     </nav>
     <div class="navbar-right">
       <span class="points-badge" id="nav-points">⭐ 1,250 點</span>
-      <div class="avatar">JJ</div>
+      <div class="avatar" id="nav-avatar" style="cursor:pointer;" onclick="doLogout()">JJ</div>
     </div>
   </div>
 </nav>
@@ -154,6 +154,8 @@
 <script src="js/store.js"></script>
 <script>
 Store.init();
+if (!checkAuth()) throw '';
+updateNavUser();
 
 // Stats
 document.getElementById('stat-itins').textContent = Store.getItineraries().length;

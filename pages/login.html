@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>登入 / 註冊 — Agent TT 智慧旅遊平台</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FDF0E0 0%,#FFF3E8 50%,#FEEEE0 100%);}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:40px 36px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);}
+.auth-logo{text-align:center;margin-bottom:28px;}
+.auth-logo-title{font-size:24px;font-weight:700;color:var(--primary);}
+.auth-logo-sub{font-size:13px;color:var(--text-muted);margin-top:4px;}
+.auth-tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:28px;}
+.auth-tab{flex:1;text-align:center;padding:10px;font-size:15px;font-weight:600;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:var(--t);}
+.auth-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.auth-panel{display:none;}
+.auth-panel.active{display:block;}
+.demo-hint{background:#FFF8F0;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:20px;font-size:13px;color:var(--text-muted);line-height:1.6;}
+.demo-hint strong{color:var(--text-sub);}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-title">🚂 Agent TT</div>
+      <div class="auth-logo-sub">智慧旅遊平台 · 竹竹苗台鐵小站之美</div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">登入</div>
+      <div class="auth-tab" onclick="switchTab('register')">註冊</div>
+    </div>
+
+    <!-- 登入 -->
+    <div class="auth-panel active" id="panel-login">
+      <div class="demo-hint">
+        <strong>示範帳號：</strong><br>
+        帳號：justin941108@gmail.com<br>
+        密碼：demo1234
+      </div>
+      <div class="form-group">
+        <label class="form-label">電子郵件</label>
+        <input class="form-control" id="login-email" type="email" placeholder="請輸入電子郵件">
+      </div>
+      <div class="form-group">
+        <label class="form-label">密碼</label>
+        <input class="form-control" id="login-pw" type="password" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary w-full" style="width:100%;margin-top:4px;" onclick="doLogin()">登入</button>
+    </div>
+
+    <!-- 註冊 -->
+    <div class="auth-panel" id="panel-register">
+      <div class="form-group">
+        <label class="form-label">姓名</label>
+        <input class="form-control" id="reg-name" type="text" placeholder="請輸入姓名">
+      </div>
+      <div class="form-group">
+        <label class="form-label">電子郵件</label>
+        <input class="form-control" id="reg-email" type="email" placeholder="請輸入電子郵件">
+      </div>
+      <div class="form-group">
+        <label class="form-label">密碼</label>
+        <input class="form-control" id="reg-pw" type="password" placeholder="請輸入密碼（至少 6 碼）">
+      </div>
+      <div class="form-group">
+        <label class="form-label">確認密碼</label>
+        <input class="form-control" id="reg-pw2" type="password" placeholder="再輸入一次密碼" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="doRegister()">建立帳號</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+
+// 已登入則直接跳首頁
+if (Store.getSession()) {
+  window.location.href = '../index.html';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    const names = ['login','register'];
+    t.classList.toggle('active', names[i] === tab);
+  });
+  document.querySelectorAll('.auth-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + tab);
+  });
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  if (!email || !pw) { showToast('請填寫帳號與密碼', 'error'); return; }
+  const user = Store.loginUser(email, pw);
+  if (!user) { showToast('帳號或密碼錯誤', 'error'); return; }
+  const session = { id: user.id, name: user.name, email: user.email, avatar: user.avatar };
+  Store.setSession(session);
+  showToast(`歡迎回來，${user.name}！`, 'success');
+  setTimeout(() => { window.location.href = '../index.html'; }, 800);
+}
+
+function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pw    = document.getElementById('reg-pw').value;
+  const pw2   = document.getElementById('reg-pw2').value;
+  if (!name || !email || !pw) { showToast('請填寫所有欄位', 'error'); return; }
+  if (pw.length < 6) { showToast('密碼至少需要 6 個字元', 'error'); return; }
+  if (pw !== pw2)    { showToast('兩次密碼不一致', 'error'); return; }
+  const avatarChar = name.slice(-2);
+  const newUser = {
+    id: Utils.genId('u'),
+    name, email, password: pw,
+    avatar: avatarChar,
+  };
+  const ok = Store.registerUser(newUser);
+  if (!ok) { showToast('此電子郵件已被使用', 'error'); return; }
+  showToast('註冊成功！請登入', 'success');
+  setTimeout(() => {
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-pw').value = '';
+    document.getElementById('reg-pw2').value = '';
+    switchTab('login');
+    document.getElementById('login-email').value = email;
+  }, 600);
+}
+</script>
+</body>
+</html>

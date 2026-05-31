@@ -27,7 +27,7 @@
     </nav>
     <div class="navbar-right">
       <span class="points-badge" id="nav-points">⭐ 載入中</span>
-      <div class="avatar">JJ</div>
+      <div class="avatar" id="nav-avatar" style="cursor:pointer;" onclick="doLogout()">JJ</div>
     </div>
   </div>
 </nav>
@@ -129,6 +129,8 @@
 <script src="../js/store.js"></script>
 <script>
 Store.init();
+if (!checkAuth()) throw '';
+updateNavUser();
 document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
 
 const statusMap = { '規劃中':'badge-info', '已完成':'badge-success', '已取消':'badge-muted' };

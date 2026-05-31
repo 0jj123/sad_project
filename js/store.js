@@ -18,10 +18,17 @@ const Store = {
       this._set('user_points', CURRENT_USER.points);
       this._set('initialized', true);
     }
+    if (!this._get('registered_users')) {
+      this._set('registered_users', [
+        { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', password:'demo1234', avatar:'JJ' },
+        { id:'u002', name:'林小明',      email:'ming@example.com',        password:'demo1234', avatar:'明' },
+        { id:'u003', name:'陳小華',      email:'hua@example.com',         password:'demo1234', avatar:'華' },
+      ]);
+    }
   },
 
   reset() {
-    ['itineraries','housing_orders','train_tickets','favorites','cart','user_points','ticket_purchase_count','initialized']
+    ['itineraries','housing_orders','train_tickets','favorites','cart','user_points','ticket_purchase_count','initialized','registered_users','session']
       .forEach(k => localStorage.removeItem('agenttt_' + k));
     this.init();
   },
@@ -102,6 +109,22 @@ const Store = {
     if (p < n) return false;
     this._set('user_points', p - n);
     return true;
+  },
+
+  /* Auth / Session */
+  getSession() { return this._get('session'); },
+  setSession(user) { this._set('session', user); },
+  clearSession() { localStorage.removeItem('agenttt_session'); },
+  getRegisteredUsers() { return this._get('registered_users') || []; },
+  registerUser(user) {
+    const users = this.getRegisteredUsers();
+    if (users.find(u => u.email === user.email)) return false;
+    users.push(user);
+    this._set('registered_users', users);
+    return true;
+  },
+  loginUser(email, password) {
+    return this.getRegisteredUsers().find(u => u.email === email && u.password === password) || null;
   },
 
   /* Ticket Purchase Count（滿5次贈30點，退票不計） */

@@ -237,6 +237,56 @@ function confirmDialog(msg) {
   });
 }
 
+/* Auth helpers */
+function checkAuth() {
+  const session = Store.getSession();
+  if (!session) {
+    const inPages = window.location.pathname.includes('/pages/');
+    window.location.href = inPages ? 'login.html' : 'pages/login.html';
+    return null;
+  }
+  window.CURRENT_USER = session;
+  return session;
+}
+
+function updateNavUser() {
+  const session = Store.getSession();
+  if (!session) return;
+  const pts = Store.getPoints();
+  const navPts = document.getElementById('nav-points');
+  if (navPts) navPts.textContent = `⭐ ${pts.toLocaleString()} 點`;
+  const navAvatar = document.getElementById('nav-avatar');
+  if (!navAvatar) return;
+  navAvatar.textContent = session.avatar || session.name.slice(0, 2);
+  if (!document.getElementById('nav-dropdown')) {
+    const wrap = document.createElement('div');
+    wrap.className = 'nav-avatar-wrap';
+    navAvatar.parentNode.insertBefore(wrap, navAvatar);
+    wrap.appendChild(navAvatar);
+    navAvatar.onclick = toggleUserDropdown;
+    const dropdown = document.createElement('div');
+    dropdown.id = 'nav-dropdown';
+    dropdown.className = 'nav-dropdown';
+    dropdown.innerHTML = `<div class="nav-dropdown-name">${session.name}</div><button class="nav-dropdown-btn" onclick="doLogout()">登出</button>`;
+    wrap.appendChild(dropdown);
+    document.addEventListener('click', e => {
+      if (!wrap.contains(e.target)) dropdown.classList.remove('show');
+    });
+  }
+}
+
+function toggleUserDropdown(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('nav-dropdown');
+  if (dropdown) dropdown.classList.toggle('show');
+}
+
+function doLogout() {
+  Store.clearSession();
+  const inPages = window.location.pathname.includes('/pages/');
+  window.location.href = inPages ? 'login.html' : 'pages/login.html';
+}
+
 /* Tab 切換 */
 function initTabs(containerId) {
   const container = document.getElementById(containerId);

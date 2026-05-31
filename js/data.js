@@ -1,5 +1,5 @@
 /* ===== Agent TT — Mock Data ===== */
-const CURRENT_USER = { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ' };
+var CURRENT_USER = { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ' };
 
 const USERS = [
   { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ' },
@@ -114,7 +114,7 @@ const HOTELS = [
     id:'h001', name:'內灣山居 民宿', station:'s002', stationDist:0.3,
     priceMin:1800, priceMax:2800, rating:4.8, reviewCount:124,
     type:'民宿', amenities:['WiFi','早餐','停車場','寵物友善'],
-    images:['🏡'], desc:'位於內灣老街旁，坐擁油桐花景致，提供客家早餐與單車租借服務。',
+    images:['https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&q=80'], desc:'位於內灣老街旁，坐擁油桐花景致，提供客家早餐與單車租借服務。',
     policies:'入住15:00，退房11:00。訂金50%，免費取消至入住前10天。',
     rooms:[
       { id:'r001', name:'山景雙人房', capacity:2, beds:'1張雙人床', area:18, price:1800, available:3, imageEmoji:'🛏️' },
@@ -134,7 +134,7 @@ const HOTELS = [
     id:'h002', name:'竹東雅客商旅', station:'s003', stationDist:0.1,
     priceMin:1200, priceMax:1800, rating:4.2, reviewCount:87,
     type:'商旅', amenities:['WiFi','停車場','健身房'],
-    images:['🏨'], desc:'鄰近竹東火車站，商務旅行首選，設施完善。',
+    images:['https://images.unsplash.com/photo-1566073771259-b3f1f5e67e01?w=800&q=80'], desc:'鄰近竹東火車站，商務旅行首選，設施完善。',
     policies:'入住14:00，退房12:00。免費取消至入住前7天。',
     rooms:[
       { id:'r003', name:'標準單人房', capacity:1, beds:'1張單人床', area:12, price:1200, available:5, imageEmoji:'🛏️' },
@@ -150,7 +150,7 @@ const HOTELS = [
     id:'h003', name:'苗栗山城驛站', station:'s004', stationDist:0.5,
     priceMin:2200, priceMax:3500, rating:4.6, reviewCount:203,
     type:'旅館', amenities:['WiFi','早餐','停車場','游泳池','SPA'],
-    images:['🏩'], desc:'苗栗市中心高質感旅館，擁有室外泳池與SPA設施。',
+    images:['https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80'], desc:'苗栗市中心高質感旅館，擁有室外泳池與SPA設施。',
     policies:'入住15:00，退房11:00。客房服務24小時。',
     rooms:[
       { id:'r005', name:'豪華雙人房', capacity:2, beds:'1張King Size床', area:28, price:2200, available:4, imageEmoji:'🛏️' },
@@ -166,7 +166,7 @@ const HOTELS = [
     id:'h004', name:'新竹悠然旅宿', station:'s001', stationDist:0.4,
     priceMin:1500, priceMax:2500, rating:4.4, reviewCount:156,
     type:'旅館', amenities:['WiFi','早餐','停車場','腳踏車租借'],
-    images:['🏠'], desc:'鄰近新竹火車站，提供腳踏車租借，輕鬆遊覽護城河周邊。',
+    images:['https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80'], desc:'鄰近新竹火車站，提供腳踏車租借，輕鬆遊覽護城河周邊。',
     policies:'入住14:00，退房11:00。',
     rooms:[
       { id:'r007', name:'雙人房', capacity:2, beds:'1張雙人床', area:18, price:1500, available:6, imageEmoji:'🛏️' },

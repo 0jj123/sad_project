@@ -16,7 +16,7 @@
 .hotel-list{display:flex;flex-direction:column;gap:16px;}
 .hotel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);display:flex;gap:0;overflow:hidden;transition:var(--t);}
 .hotel-card:hover{box-shadow:var(--shadow-lg);border-color:var(--primary-light);}
-.hotel-thumb{width:200px;flex-shrink:0;background:linear-gradient(135deg,var(--bg-alt),var(--border));display:flex;align-items:center;justify-content:center;font-size:52px;color:var(--text-muted);}
+.hotel-thumb{width:200px;flex-shrink:0;background:var(--bg-alt);overflow:hidden;}
 .hotel-info{flex:1;padding:20px;}
 .hotel-name{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px;}
 .hotel-meta{font-size:13px;color:var(--text-muted);margin-bottom:10px;display:flex;gap:12px;flex-wrap:wrap;}
@@ -25,6 +25,7 @@
 .hotel-price{font-size:20px;font-weight:700;color:var(--primary);}
 .hotel-price span{font-size:13px;font-weight:400;color:var(--text-muted);}
 @media(max-width:600px){.hotel-card{flex-direction:column;}.hotel-thumb{width:100%;height:160px;}}
+.hotel-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .cart-btn{position:relative;background:none;border:1px solid var(--border);border-radius:var(--r-md);padding:6px 12px;cursor:pointer;font-size:15px;color:var(--text);transition:var(--t);}
 .cart-btn:hover{background:var(--bg-alt);border-color:var(--primary);}
 .cart-badge{position:absolute;top:-6px;right:-6px;background:var(--primary);color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;line-height:1;}
@@ -62,7 +63,7 @@
         <span class="cart-badge hidden" id="cart-badge">0</span>
       </button>
       <span class="points-badge" id="nav-points">⭐ 載入中</span>
-      <div class="avatar">JJ</div>
+      <div class="avatar" id="nav-avatar" style="cursor:pointer;" onclick="doLogout()">JJ</div>
     </div>
   </div>
 </nav>
@@ -192,6 +193,8 @@
 <script src="../js/store.js"></script>
 <script>
 Store.init();
+if (!checkAuth()) throw '';
+updateNavUser();
 document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
 
 // Populate station dropdown
@@ -205,8 +208,26 @@ ALL_STATIONS.filter(s=>s.region==='竹竹苗').forEach(s=>{
 const today = Utils.today();
 const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
 const tomStr = tomorrow.toISOString().split('T')[0];
-document.getElementById('f-checkin').value = today;
-document.getElementById('f-checkout').value = tomStr;
+const fCheckin = document.getElementById('f-checkin');
+const fCheckout = document.getElementById('f-checkout');
+fCheckin.min = today;
+fCheckin.value = today;
+fCheckout.min = tomStr;
+fCheckout.value = tomStr;
+fCheckin.addEventListener('change', () => {
+  if (!fCheckin.value) return;
+  const next = new Date(fCheckin.value); next.setDate(next.getDate()+1);
+  const minStr = next.toISOString().split('T')[0];
+  fCheckout.min = minStr;
+  if (fCheckout.value <= fCheckin.value) fCheckout.value = minStr;
+});
+fCheckout.addEventListener('change', () => {
+  if (fCheckout.value && fCheckout.value <= fCheckin.value) {
+    const next = new Date(fCheckin.value); next.setDate(next.getDate()+1);
+    fCheckout.value = next.toISOString().split('T')[0];
+    showToast('退房日期已自動調整為入住日期後一天', 'warning');
+  }
+});
 
 // Populate type filters
 const types = [...new Set(HOTELS.map(h=>h.type))];
@@ -280,7 +301,7 @@ function renderHotels() {
     const stationName = Utils.getStationName(h.station);
     return `
     <div class="hotel-card">
-      <div class="hotel-thumb">${h.images[0]}</div>
+      <div class="hotel-thumb"><img src="${h.images[0]}" alt="${h.name}" loading="lazy"></div>
       <div class="hotel-info">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
