@@ -18,8 +18,9 @@ const Store = {
       this._set('user_points', CURRENT_USER.points);
       this._set('initialized', true);
     }
-    if (!this._get('registered_users')) {
-      this._set('registered_users', []);
+    const existingUsers = this._get('registered_users');
+    if (!existingUsers || !Array.isArray(existingUsers) || existingUsers.some(u => !u.account)) {
+      this._set('registered_users', Array.isArray(existingUsers) ? existingUsers.filter(u => u.account) : []);
     }
   },
 
