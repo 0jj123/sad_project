@@ -9,7 +9,18 @@
 .type-自強{background:#FEF0E0;color:#C46010;}
 .type-莒光{background:#E8F0FE;color:#3060C4;}
 .type-區間{background:#E8FEE8;color:#308030;}
-@media(max-width:480px){.swap-btn{right:4px!important;}}
+@media(max-width:480px){
+  .swap-btn{
+    left:50%!important;right:auto!important;
+    top:auto!important;bottom:-14px!important;
+    transform:translateX(-50%)!important;
+    background:var(--surface)!important;
+    border:1px solid var(--border)!important;
+    border-radius:var(--r-full)!important;
+    padding:2px 10px!important;
+    z-index:2!important;font-size:16px!important;
+  }
+}
 .seat-info{display:flex;align-items:center;gap:6px;font-size:13px;}
 .seat-full{color:var(--danger);}
 .seat-low{color:var(--warning);}
