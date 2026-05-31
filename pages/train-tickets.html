@@ -350,7 +350,7 @@ function showChange(ticketId) {
       </div>
       <div class="form-group">
         <label class="form-label">新乘車日期</label>
-        <input class="form-control" id="ch-date" type="date" value="${t.date}">
+        <input class="form-control" id="ch-date" type="date" value="${t.date}" min="${Utils.today()}">
       </div>
     </div>`;
   openModal('modal-change');

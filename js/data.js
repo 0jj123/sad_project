@@ -134,7 +134,7 @@ const HOTELS = [
     id:'h002', name:'竹東雅客商旅', station:'s003', stationDist:0.1,
     priceMin:1200, priceMax:1800, rating:4.2, reviewCount:87,
     type:'商旅', amenities:['WiFi','停車場','健身房'],
-    images:['https://picsum.photos/id/164/800/500'], desc:'鄰近竹東火車站，商務旅行首選，設施完善。',
+    images:['https://picsum.photos/id/260/800/500'], desc:'鄰近竹東火車站，商務旅行首選，設施完善。',
     policies:'入住14:00，退房12:00。免費取消至入住前7天。',
     rooms:[
       { id:'r003', name:'標準單人房', capacity:1, beds:'1張單人床', area:12, price:1200, available:5, imageEmoji:'🛏️' },

@@ -164,7 +164,9 @@ document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toL
 // Defaults
 document.getElementById('f-from').value='s011';
 document.getElementById('f-to').value='s001';
-document.getElementById('f-date').value = Utils.today();
+const dateEl = document.getElementById('f-date');
+dateEl.min = Utils.today();
+dateEl.value = Utils.today();
 
 let trainTypeFilter = '';
 
