@@ -221,7 +221,11 @@ document.getElementById('train-info-card').innerHTML = `
   </div>`;
 
 // Build seat grid (2+2 layout: AB | aisle | CD)
-const OCCUPIED = ['1A','1B','2C','3B','4A','4C','5B','6A','7C','8B','9A','10C'];
+const BASE_OCCUPIED = ['1A','1B','2C','3B','4A','4C','5B','6A','7C','8B','9A','10C'];
+const bookedSeats = Store.getTrainTickets()
+  .filter(t => t.scheduleId === scheduleId && t.date === travelDate && t.status !== '已取消')
+  .map(t => t.seatNo);
+const OCCUPIED = [...new Set([...BASE_OCCUPIED, ...bookedSeats])];
 const ROWS=10, COLS_LEFT=['A','B'], COLS_RIGHT=['C','D'];
 let seatGrid = document.getElementById('seat-grid');
 
