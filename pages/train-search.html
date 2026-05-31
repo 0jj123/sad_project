@@ -203,6 +203,14 @@ function doSearch() {
 
   let results = TRAIN_SCHEDULES.filter(s=>s.from===from && s.to===to);
   if (trainTypeFilter) results = results.filter(s=>s.type===trainTypeFilter);
+  if (date === Utils.today()) {
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    results = results.filter(s => {
+      const [h, m] = s.dep.split(':').map(Number);
+      return h * 60 + m > nowMins;
+    });
+  }
 
   document.getElementById('tips-area').style.display='none';
   document.getElementById('no-result').classList.add('hidden');
