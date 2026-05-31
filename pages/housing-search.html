@@ -43,6 +43,14 @@
 .cart-empty{text-align:center;padding:48px 0;color:var(--text-muted);}
 .cart-empty-icon{font-size:40px;margin-bottom:12px;}
 @media(max-width:420px){.cart-drawer{width:100%;right:-100%;}}
+@media(max-width:900px){
+  .filter-panel{display:none;}
+  .filter-panel.show{display:block;}
+  .filter-toggle-wrap{display:flex!important;}
+}
+@media(max-width:480px){
+  #cart-count-text{display:none;}
+}
 </style>
 </head>
 <body>
@@ -107,6 +115,11 @@
       <div style="display:flex;justify-content:flex-end;margin-top:12px;">
         <button class="btn btn-primary" onclick="doSearch()">🔍 搜尋住宿</button>
       </div>
+    </div>
+
+    <!-- Mobile Filter Toggle -->
+    <div class="filter-toggle-wrap" style="display:none;margin-bottom:12px;">
+      <button class="btn btn-secondary btn-sm" id="filter-toggle-btn" onclick="toggleFilter()">⚙ 篩選條件</button>
     </div>
 
     <!-- Results Layout -->
@@ -396,6 +409,12 @@ function removeCartItem(hotelId) {
   renderCart();
   const h = HOTELS.find(h => h.id === hotelId);
   showToast(`「${h ? h.name : ''}」已從購物車移除`, '');
+}
+
+function toggleFilter() {
+  const panel = document.querySelector('.filter-panel');
+  panel.classList.toggle('show');
+  document.getElementById('filter-toggle-btn').textContent = panel.classList.contains('show') ? '✕ 收合篩選' : '⚙ 篩選條件';
 }
 
 updateCartBadge();

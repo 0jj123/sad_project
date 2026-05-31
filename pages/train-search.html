@@ -9,6 +9,7 @@
 .type-自強{background:#FEF0E0;color:#C46010;}
 .type-莒光{background:#E8F0FE;color:#3060C4;}
 .type-區間{background:#E8FEE8;color:#308030;}
+@media(max-width:480px){.swap-btn{right:4px!important;}}
 .seat-info{display:flex;align-items:center;gap:6px;font-size:13px;}
 .seat-full{color:var(--danger);}
 .seat-low{color:var(--warning);}
@@ -57,7 +58,7 @@
           <select class="form-control" id="f-from">
             <option value="">請選擇</option>
           </select>
-          <button style="position:absolute;right:-20px;top:28px;background:none;border:none;font-size:18px;cursor:pointer;z-index:1;" onclick="swapStations()" title="互換">⇄</button>
+          <button class="swap-btn" style="position:absolute;right:-20px;top:28px;background:none;border:none;font-size:18px;cursor:pointer;z-index:1;" onclick="swapStations()" title="互換">⇄</button>
         </div>
         <div class="form-group">
           <label class="form-label">目的站</label>
