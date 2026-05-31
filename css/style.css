@@ -290,7 +290,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 
 @media(max-width:768px){
   .navbar-nav{display:none;}
-  .navbar-right .btn{display:none;}
+  .navbar-right .btn{font-size:12px;padding:4px 10px;}
   .navbar-inner{gap:var(--s3);}
   .navbar-right{gap:var(--s2);}
   .points-badge{font-size:11px;padding:2px 7px;}
@@ -306,6 +306,6 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   .tabs::-webkit-scrollbar{display:none;}
   .tab{flex-shrink:0;}
 }
-@media(max-width:480px){
+@media(max-width:600px){
   .form-row-2,.form-row-3,.form-row-4{grid-template-columns:1fr;}
 }
