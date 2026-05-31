@@ -291,6 +291,9 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 @media(max-width:768px){
   .navbar-nav{display:none;}
   .navbar-right .btn{display:none;}
+  .navbar-inner{gap:var(--s3);}
+  .navbar-right{gap:var(--s2);}
+  .points-badge{font-size:11px;padding:2px 7px;}
   .form-row-3,.form-row-4{grid-template-columns:1fr 1fr;}
   .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
   .container{padding:0 var(--s4);}
