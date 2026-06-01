@@ -46,7 +46,7 @@
           <p class="page-subtitle" id="itin-meta"></p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="openModal('modal-invite')">👥 邀請旅伴</button>
+          <button id="btn-invite" class="btn btn-secondary btn-sm" onclick="openModal('modal-invite')">👥 邀請旅伴</button>
           <button class="btn btn-secondary btn-sm" onclick="shareReadonly()">🔗 分享連結</button>
           <a id="btn-train" href="train-search.html" class="btn btn-outline btn-sm">🚂 查詢車票</a>
           <a id="btn-hotel" href="housing-search.html" class="btn btn-outline btn-sm">🏨 搜尋住宿</a>
@@ -72,7 +72,7 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">💰 費用總覽</span>
-            <button class="btn btn-sm btn-primary" onclick="openModal('modal-expense')">＋ 記錄支出</button>
+            <button id="btn-expense" class="btn btn-sm btn-primary" onclick="openModal('modal-expense')">＋ 記錄支出</button>
           </div>
           <div class="card-body">
             <div id="budget-display"></div>
@@ -96,7 +96,7 @@
           </div>
           <div class="chat-window" style="border:none;height:280px;">
             <div class="chat-messages" id="comment-list"></div>
-            <div class="chat-input-area">
+            <div class="chat-input-area" id="chat-input-wrap">
               <input class="form-control" id="comment-input" placeholder="輸入留言..." onkeydown="if(event.key==='Enter')addComment()">
               <button class="btn btn-primary btn-sm" onclick="addComment()">送出</button>
             </div>
@@ -239,11 +239,22 @@
 <script src="../js/store.js"></script>
 <script>
 Store.init();
-if (!checkAuth()) throw '';
-updateNavUser();
-document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
-
 const params = new URLSearchParams(location.search);
+const isReadonly = params.get('readonly') === '1';
+
+if (!isReadonly) {
+  if (!checkAuth()) throw '';
+  updateNavUser();
+  document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+} else {
+  document.querySelector('.navbar-right').innerHTML =
+    '<span style="font-size:12px;color:var(--text-muted);padding:4px 10px;background:var(--bg-alt);border-radius:var(--r-full);border:1px solid var(--border);">👁 唯讀模式</span>' +
+    '<a href="login.html" class="btn btn-primary btn-sm">登入</a>';
+  document.getElementById('btn-invite').style.display = 'none';
+  document.getElementById('btn-expense').style.display = 'none';
+  document.getElementById('chat-input-wrap').style.display = 'none';
+}
+
 const itinId = params.get('id') || 'itin001';
 let itin = Store.getItinerary(itinId);
 if (!itin) { alert('找不到行程'); location.href='itinerary-list.html'; }
@@ -295,7 +306,7 @@ function renderDayPanel(key) {
   const votes = itin.votes || {};
   let html = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-      <button class="btn btn-primary btn-sm" onclick="currentDay='${key}';openModal('modal-add-item')">＋ 新增項目</button>
+      ${!isReadonly ? `<button class="btn btn-primary btn-sm" onclick="currentDay='${key}';openModal('modal-add-item')">＋ 新增項目</button>` : ''}
     </div>`;
   if (!items.length) {
     html += `<div class="empty-state" style="padding:40px 0;">
@@ -312,7 +323,7 @@ function renderDayPanel(key) {
     const myVote = votes[item.id]?.[CURRENT_USER.id];
     const isWinner = itemVotes >= totalMembers && totalMembers > 1;
     html += `
-    <div class="timeline-item" id="ti-${item.id}" draggable="true" data-id="${item.id}" data-day="${key}">
+    <div class="timeline-item" id="ti-${item.id}" draggable="${!isReadonly}" data-id="${item.id}" data-day="${key}">
       <div class="timeline-dot"></div>
       <div class="timeline-card ${isWinner?'':''}">
         <div style="display:flex;align-items:flex-start;gap:10px;">
@@ -331,8 +342,10 @@ function renderDayPanel(key) {
             ${item.note?`<div class="text-sm text-sub mt-2" style="background:var(--bg-alt);padding:6px 10px;border-radius:var(--r-sm);">📝 ${item.note}</div>`:''}
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0;">
-            <button class="btn-icon" title="投票" onclick="toggleVote('${item.id}')">${myVote?'❤️':'🤍'} ${itemVotes}</button>
-            <button class="btn-icon" title="刪除" onclick="deleteItem('${key}','${item.id}')">🗑</button>
+            ${isReadonly
+              ? `<button class="btn-icon" disabled title="請登入後投票" style="opacity:0.5;cursor:not-allowed;">🤍 ${itemVotes}</button>`
+              : `<button class="btn-icon" title="投票" onclick="toggleVote('${item.id}')">${myVote?'❤️':'🤍'} ${itemVotes}</button>
+            <button class="btn-icon" title="刪除" onclick="deleteItem('${key}','${item.id}')">🗑</button>`}
           </div>
         </div>
         ${itemVotes>0?`<div class="vote-bar"><div class="vote-fill ${isWinner?'vote-winner':''}" style="width:${Math.min(100,itemVotes/totalMembers*100)}%"></div></div>`:''}
@@ -344,6 +357,7 @@ function renderDayPanel(key) {
 }
 
 function bindDragEvents(panel, key) {
+  if (isReadonly) return;
   panel.addEventListener('dragstart', e => {
     const ti = e.target.closest('.timeline-item');
     if (ti) { dragSrcId = ti.dataset.id; ti.querySelector('.timeline-card').classList.add('dragging'); }
@@ -463,7 +477,7 @@ function renderBudget() {
           <div class="text-xs text-muted">${e.type} ・ ${Utils.getUserName(e.paidBy)}</div>
         </div>
         <div class="fw-600 text-primary">${Utils.formatCurrency(e.amount)}</div>
-        <button class="btn-icon" onclick="deleteExpense('${e.id}')">🗑</button>
+        ${!isReadonly ? `<button class="btn-icon" onclick="deleteExpense('${e.id}')">🗑</button>` : ''}
       </div>`).join('')
     : '<div class="text-sm text-muted">尚無支出紀錄</div>';
   document.getElementById('expense-list').innerHTML = expHtml;
