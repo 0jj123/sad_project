@@ -209,6 +209,29 @@ const TRAIN_SCHEDULES = [
   { id:'tr008', trainNo:'3509', type:'區間', from:'s011', to:'s002', dep:'09:15', arr:'11:10', duration:115, price:{full:210,half:105,child:105}, seats:47, delay:0 },
   { id:'tr009', trainNo:'3511', type:'區間', from:'s001', to:'s004', dep:'10:00', arr:'10:52', duration:52, price:{full:84,half:42,child:42}, seats:120, delay:0 },
   { id:'tr010', trainNo:'3513', type:'區間', from:'s001', to:'s004', dep:'12:30', arr:'13:22', duration:52, price:{full:84,half:42,child:42}, seats:65, delay:0 },
+  // 台北→新竹 下午/晚上
+  { id:'tr011', trainNo:'3509', type:'區間', from:'s011', to:'s001', dep:'11:00', arr:'12:15', duration:75, price:{full:174,half:87,child:87}, seats:88, delay:0 },
+  { id:'tr012', trainNo:'143',  type:'自強', from:'s011', to:'s001', dep:'12:00', arr:'12:47', duration:47, price:{full:218,half:109,child:109}, seats:22, delay:0 },
+  { id:'tr013', trainNo:'3515', type:'區間', from:'s011', to:'s001', dep:'13:30', arr:'14:45', duration:75, price:{full:174,half:87,child:87}, seats:105, delay:0 },
+  { id:'tr014', trainNo:'145',  type:'自強', from:'s011', to:'s001', dep:'14:30', arr:'15:17', duration:47, price:{full:218,half:109,child:109}, seats:58, delay:0 },
+  { id:'tr015', trainNo:'5003', type:'莒光', from:'s011', to:'s001', dep:'15:30', arr:'16:32', duration:62, price:{full:196,half:98,child:98}, seats:40, delay:0 },
+  { id:'tr016', trainNo:'3517', type:'區間', from:'s011', to:'s001', dep:'16:00', arr:'17:15', duration:75, price:{full:174,half:87,child:87}, seats:73, delay:5 },
+  { id:'tr017', trainNo:'147',  type:'自強', from:'s011', to:'s001', dep:'17:00', arr:'17:47', duration:47, price:{full:218,half:109,child:109}, seats:0,  delay:0 },
+  { id:'tr018', trainNo:'3519', type:'區間', from:'s011', to:'s001', dep:'18:00', arr:'19:15', duration:75, price:{full:174,half:87,child:87}, seats:94, delay:0 },
+  { id:'tr019', trainNo:'149',  type:'自強', from:'s011', to:'s001', dep:'19:00', arr:'19:47', duration:47, price:{full:218,half:109,child:109}, seats:31, delay:0 },
+  { id:'tr020', trainNo:'3521', type:'區間', from:'s011', to:'s001', dep:'20:30', arr:'21:45', duration:75, price:{full:174,half:87,child:87}, seats:112, delay:0 },
+  { id:'tr021', trainNo:'151',  type:'自強', from:'s011', to:'s001', dep:'21:30', arr:'22:17', duration:47, price:{full:218,half:109,child:109}, seats:45, delay:0 },
+  // 台北→內灣 下午/晚上
+  { id:'tr022', trainNo:'3523', type:'區間', from:'s011', to:'s002', dep:'11:30', arr:'13:25', duration:115, price:{full:210,half:105,child:105}, seats:63, delay:0 },
+  { id:'tr023', trainNo:'3525', type:'區間', from:'s011', to:'s002', dep:'13:45', arr:'15:40', duration:115, price:{full:210,half:105,child:105}, seats:88, delay:0 },
+  { id:'tr024', trainNo:'3527', type:'區間', from:'s011', to:'s002', dep:'15:30', arr:'17:25', duration:115, price:{full:210,half:105,child:105}, seats:22, delay:0 },
+  { id:'tr025', trainNo:'3529', type:'區間', from:'s011', to:'s002', dep:'17:15', arr:'19:10', duration:115, price:{full:210,half:105,child:105}, seats:75, delay:0 },
+  { id:'tr026', trainNo:'3531', type:'區間', from:'s011', to:'s002', dep:'19:30', arr:'21:25', duration:115, price:{full:210,half:105,child:105}, seats:50, delay:0 },
+  // 新竹→苗栗 下午/晚上
+  { id:'tr027', trainNo:'3515', type:'區間', from:'s001', to:'s004', dep:'14:00', arr:'14:52', duration:52, price:{full:84,half:42,child:42}, seats:90, delay:0 },
+  { id:'tr028', trainNo:'3517', type:'區間', from:'s001', to:'s004', dep:'16:30', arr:'17:22', duration:52, price:{full:84,half:42,child:42}, seats:48, delay:0 },
+  { id:'tr029', trainNo:'3519', type:'區間', from:'s001', to:'s004', dep:'18:00', arr:'18:52', duration:52, price:{full:84,half:42,child:42}, seats:110, delay:0 },
+  { id:'tr030', trainNo:'3521', type:'區間', from:'s001', to:'s004', dep:'20:00', arr:'20:52', duration:52, price:{full:84,half:42,child:42}, seats:35, delay:0 },
 ];
 
 const TRAIN_TICKETS = [
