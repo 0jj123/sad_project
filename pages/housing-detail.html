@@ -118,6 +118,7 @@ document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toL
 
 const params = new URLSearchParams(location.search);
 const hotelId = params.get('id') || 'h001';
+const _itinId = params.get('itin') || null;
 const hotel = HOTELS.find(h=>h.id===hotelId);
 if (!hotel) { document.getElementById('page-content').innerHTML='<div class="empty-state"><div class="empty-icon">🏨</div><div class="empty-title">找不到此房源</div></div>'; }
 
@@ -445,7 +446,7 @@ function confirmBook() {
     roomPrice: selectedRoom.price, discount: o.pointsUsed, totalAmount: o.total,
     status: '已付款', payMethod: selectedPayMethod,
     paidAt: new Date().toLocaleString('zh-TW').replace(/\//g,'-'),
-    itineraryId: null,
+    itineraryId: _itinId,
   };
   Store.addHousingOrder(order);
   closeModal('modal-book');

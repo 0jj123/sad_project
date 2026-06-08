@@ -209,6 +209,7 @@ Store.init();
 if (!checkAuth()) throw '';
 updateNavUser();
 document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
+const _itinParam = new URLSearchParams(location.search).get('itin') || '';
 
 // Populate station dropdown
 const stationSel = document.getElementById('f-station');
@@ -335,7 +336,7 @@ function renderHotels() {
         <p class="text-sm text-muted" style="margin-bottom:12px;">${h.desc.slice(0,60)}...</p>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
           <div class="hotel-price">${Utils.formatCurrency(h.priceMin)} <span>起 / 晚</span></div>
-          <a href="housing-detail.html?id=${h.id}" class="btn btn-primary">查看詳情 →</a>
+          <a href="housing-detail.html?id=${h.id}${_itinParam?'&itin='+_itinParam:''}" class="btn btn-primary">查看詳情 →</a>
         </div>
       </div>
     </div>`;

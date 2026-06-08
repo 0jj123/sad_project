@@ -259,6 +259,8 @@ if (!isReadonly) {
 
 const itinId = params.get('id') || 'itin001';
 let itin = Store.getItinerary(itinId);
+document.getElementById('btn-hotel').href = `housing-search.html?itin=${itinId}`;
+document.getElementById('btn-train').href = `train-search.html?itin=${itinId}`;
 if (!itin) { alert('找不到行程'); location.href='itinerary-list.html'; }
 
 let currentDay = 'D1';
