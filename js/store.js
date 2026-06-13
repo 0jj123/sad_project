@@ -47,7 +47,18 @@ const Store = {
 
   /* Itineraries */
   /* Hotels */
-  getHotels() { return this._get('hotels') || HOTELS; },
+  getHotels() {
+    const stored = this._get('hotels') || [];
+    if (!stored.length) { this._set('hotels', HOTELS); return HOTELS; }
+    const ids = new Set(stored.map(h => h.id));
+    const missing = HOTELS.filter(h => !ids.has(h.id));
+    if (missing.length) {
+      const merged = [...stored, ...missing];
+      this._set('hotels', merged);
+      return merged;
+    }
+    return stored;
+  },
   saveHotels(data) { this._set('hotels', data); },
   addHotel(hotel) { const list = this.getHotels(); list.push(hotel); this.saveHotels(list); },
   updateHotel(id, patch) {
