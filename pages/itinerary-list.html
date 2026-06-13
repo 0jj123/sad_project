@@ -147,6 +147,9 @@ function renderList() {
   grid.innerHTML = list.map(i => {
     const spent = Utils.calcTotalExpense(i.expenses);
     const days = Object.values(i.days_items||{}).flat().length;
+    const cancelBtn = i.status === '規劃中'
+      ? `<button class="btn btn-sm" style="font-size:12px;padding:4px 10px;border:1px solid var(--danger,#e53e3e);color:var(--danger,#e53e3e);background:transparent;border-radius:6px;cursor:pointer;" onclick="cancelItinerary(event,'${i.id}')">取消行程</button>`
+      : '';
     return `
     <a class="itin-card" href="itinerary-detail.html?id=${i.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
@@ -163,8 +166,21 @@ function renderList() {
         <span class="text-sm text-muted">👥 ${1 + (i.collaborators||[]).length} 人協作</span>
         <span class="text-sm fw-600 text-primary">${Utils.formatCurrency(spent)} 已記錄</span>
       </div>
+      ${cancelBtn ? `<div style="margin-top:10px;display:flex;justify-content:flex-end;">${cancelBtn}</div>` : ''}
     </a>`;
   }).join('');
+}
+
+function cancelItinerary(e, id) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!confirm('確定要取消這個行程嗎？')) return;
+  const itin = Store.getItinerary(id);
+  if (!itin) return;
+  itin.status = '已取消';
+  Store.saveItinerary(itin);
+  showToast('行程已取消', 'success');
+  renderList();
 }
 
 // Filter chips

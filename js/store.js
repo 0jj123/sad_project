@@ -9,7 +9,7 @@ const Store = {
 
   /* 初始化假資料（首次載入） */
   init() {
-    if (!this._get('initialized')) {
+    if (!this._get('initialized_v2')) {
       this._set('itineraries', ITINERARIES);
       this._set('housing_orders', HOUSING_ORDERS);
       this._set('train_tickets', TRAIN_TICKETS);
@@ -17,6 +17,7 @@ const Store = {
       this._set('cart', []);
       this._set('user_points', CURRENT_USER.points);
       this._set('initialized', true);
+      this._set('initialized_v2', true);
     }
     const existingUsers = this._get('registered_users');
     if (!existingUsers || !Array.isArray(existingUsers) || existingUsers.some(u => !u.account)) {
