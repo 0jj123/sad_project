@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>平台管理後台 | Agent TT</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.admin-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 64px);}
+.admin-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;}
+.admin-sidebar-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;padding:0 20px;margin-bottom:8px;}
+.admin-nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:14px;font-weight:500;color:var(--text-sub);cursor:pointer;transition:var(--t);border-left:3px solid transparent;}
+.admin-nav-item:hover{background:var(--primary-ghost);color:var(--primary);}
+.admin-nav-item.active{background:var(--primary-ghost);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.admin-content{padding:28px;background:var(--bg);}
+.admin-panel{display:none;}
+.admin-panel.active{display:block;}
+.admin-table{width:100%;border-collapse:collapse;font-size:14px;}
+.admin-table th{background:var(--surface-warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:1px solid var(--border);}
+.admin-table td{padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle;}
+.admin-table tr:hover td{background:var(--primary-ghost);}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+@media(max-width:900px){.admin-layout{grid-template-columns:1fr;}.admin-sidebar{display:flex;flex-wrap:wrap;padding:12px;border-right:none;border-bottom:1px solid var(--border);}.admin-nav-item{border-left:none;border-bottom:3px solid transparent;padding:8px 14px;}.admin-nav-item.active{border-bottom-color:var(--primary);border-left-color:transparent;}.stat-row{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="../index.html" class="navbar-logo">Agent TT <span>管理後台</span></a>
+    <div class="navbar-right">
+      <span class="badge badge-info" style="font-size:13px;padding:4px 12px;">🛡️ 平台管理者</span>
+      <div class="avatar" id="nav-avatar" style="cursor:pointer;" onclick="doLogout()">管</div>
+    </div>
+  </div>
+</nav>
+
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <div class="admin-sidebar">
+    <div class="admin-sidebar-title">管理選單</div>
+    <div class="admin-nav-item active" onclick="showPanel('overview')">📊 總覽</div>
+    <div class="admin-nav-item" onclick="showPanel('hotels')">🏨 房源管理</div>
+    <div class="admin-nav-item" onclick="showPanel('orders')">📋 訂單管理</div>
+    <div class="admin-nav-item" onclick="showPanel('pricing')">💰 定價與折扣</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="admin-content">
+
+    <!-- 總覽 -->
+    <div class="admin-panel active" id="panel-overview">
+      <h2 class="fw-700 mb-5" style="font-size:20px;">📊 平台總覽</h2>
+      <div class="stat-row" id="overview-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">最近訂單</span></div>
+          <div class="card-body" id="overview-orders"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">房源狀況</span></div>
+          <div class="card-body" id="overview-hotels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房源管理 -->
+    <div class="admin-panel" id="panel-hotels">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 class="fw-700" style="font-size:20px;">🏨 房源管理</h2>
+        <button class="btn btn-primary btn-sm" onclick="openHotelModal()">＋ 新增房源</button>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <table class="admin-table" id="hotel-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 訂單管理 -->
+    <div class="admin-panel" id="panel-orders">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 class="fw-700" style="font-size:20px;">📋 訂單管理</h2>
+        <div class="filter-chips" id="order-filter-chips">
+          <button class="chip active" data-s="全部">全部</button>
+          <button class="chip" data-s="已付款">已付款</button>
+          <button class="chip" data-s="已完成">已完成</button>
+          <button class="chip" data-s="取消中">取消中</button>
+          <button class="chip" data-s="已取消">已取消</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <table class="admin-table" id="order-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 定價與折扣 -->
+    <div class="admin-panel" id="panel-pricing">
+      <h2 class="fw-700 mb-5" style="font-size:20px;">💰 定價與折扣管理</h2>
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center;">
+        <label class="form-label" style="margin:0;">選擇房源：</label>
+        <select class="form-control" id="pricing-hotel-select" style="max-width:260px;" onchange="renderPricing()"></select>
+      </div>
+      <div id="pricing-content"></div>
+
+      <div class="card mt-5">
+        <div class="card-header"><span class="card-title">🎫 折扣設定</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div class="form-group">
+              <label class="form-label">早鳥優惠（提前 N 天，折扣率）</label>
+              <div style="display:flex;gap:8px;">
+                <input class="form-control" id="disc-earlybird-days" type="number" value="30" min="1" style="width:80px;" placeholder="天">
+                <input class="form-control" id="disc-earlybird-rate" type="number" value="90" min="1" max="100" style="width:80px;" placeholder="%">
+                <span class="text-sm text-muted" style="align-self:center;">%</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">套裝優惠（住 N 晚折扣）</label>
+              <div style="display:flex;gap:8px;">
+                <input class="form-control" id="disc-package-nights" type="number" value="3" min="1" style="width:80px;" placeholder="晚">
+                <input class="form-control" id="disc-package-rate" type="number" value="85" min="1" max="100" style="width:80px;" placeholder="%">
+                <span class="text-sm text-muted" style="align-self:center;">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-info mt-3">
+            <span class="alert-icon">ℹ</span>
+            <span>折扣設定為全平台套用，實際訂房時系統將自動計算最優惠方案。</span>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveDiscounts()">儲存折扣設定</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Modal: 新增/編輯房源 -->
+<div class="modal-overlay" id="modal-hotel">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="hotel-modal-title">新增房源</span>
+      <button class="btn-icon" onclick="closeModal('modal-hotel')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <input type="hidden" id="hm-id">
+        <div class="form-group">
+          <label class="form-label">房源名稱 *</label>
+          <input class="form-control" id="hm-name" placeholder="例：內灣山居民宿">
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">所在車站 *</label>
+            <select class="form-control" id="hm-station"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">類型 *</label>
+            <select class="form-control" id="hm-type">
+              <option>民宿</option><option>旅館</option><option>商旅</option><option>飯店</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">距車站（km）</label>
+            <input class="form-control" id="hm-dist" type="number" step="0.1" min="0" placeholder="0.3">
+          </div>
+          <div class="form-group">
+            <label class="form-label">評分（1-5）</label>
+            <input class="form-control" id="hm-rating" type="number" step="0.1" min="1" max="5" placeholder="4.5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">設施（用逗號分隔）</label>
+          <input class="form-control" id="hm-amenities" placeholder="WiFi,早餐,停車場">
+        </div>
+        <div class="form-group">
+          <label class="form-label">簡介</label>
+          <input class="form-control" id="hm-desc" placeholder="房源描述">
+        </div>
+        <div class="form-group">
+          <label class="form-label">入住政策</label>
+          <input class="form-control" id="hm-policy" placeholder="入住15:00，退房11:00。">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-hotel')">取消</button>
+      <button class="btn btn-primary" onclick="saveHotel()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 訂單詳情 -->
+<div class="modal-overlay" id="modal-order">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">訂單詳情</span>
+      <button class="btn-icon" onclick="closeModal('modal-order')">✕</button>
+    </div>
+    <div class="modal-body" id="order-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-order')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/store.js"></script>
+<script>
+Store.init();
+
+// Admin auth guard
+const session = Store.getSession();
+if (!session || session.role !== 'admin') {
+  alert('請以管理員身份登入');
+  location.href = 'login.html';
+  throw '';
+}
+
+document.getElementById('nav-avatar').textContent = session.avatar || '管';
+
+// Populate station select in hotel modal
+const stationSel = document.getElementById('hm-station');
+ALL_STATIONS.filter(s=>s.region==='竹竹苗').forEach(s=>{
+  const o = document.createElement('option'); o.value=s.id; o.textContent=s.name; stationSel.appendChild(o);
+});
+
+const STATUS_COLOR = { '已付款':'badge-success','已完成':'badge-muted','取消中':'badge-danger','退款中':'badge-danger','已取消':'badge-muted' };
+let orderFilter = '全部';
+let editingHotelId = null;
+
+/* ===== Panel navigation ===== */
+function showPanel(name) {
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name==='overview') renderOverview();
+  if (name==='hotels')   renderHotelTable();
+  if (name==='orders')   renderOrderTable();
+  if (name==='pricing')  renderPricingSelects();
+}
+
+/* ===== Overview ===== */
+function renderOverview() {
+  const hotels = Store.getHotels();
+  const orders = Store.getHousingOrders();
+  const paid   = orders.filter(o=>o.status==='已付款').length;
+  const revenue= orders.filter(o=>['已付款','已完成'].includes(o.status)).reduce((s,o)=>s+o.totalAmount,0);
+  document.getElementById('overview-stats').innerHTML = [
+    { label:'房源數量', value: hotels.length, icon:'🏨' },
+    { label:'訂單總數', value: orders.length, icon:'📋' },
+    { label:'進行中訂單', value: paid, icon:'✅' },
+    { label:'累計營收', value: Utils.formatCurrency(revenue), icon:'💰' },
+  ].map(s=>`<div class="stat-card"><div class="stat-value">${s.value}</div><div class="stat-label">${s.icon} ${s.label}</div></div>`).join('');
+
+  document.getElementById('overview-orders').innerHTML = orders.slice(0,5).map(o=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
+      <div><span class="fw-500">${o.hotelName}</span> <span class="badge ${STATUS_COLOR[o.status]||'badge-muted'}" style="font-size:10px;">${o.status}</span></div>
+      <span class="text-primary fw-600">${Utils.formatCurrency(o.totalAmount)}</span>
+    </div>`).join('') || '<div class="text-sm text-muted">尚無訂單</div>';
+
+  document.getElementById('overview-hotels').innerHTML = hotels.map(h=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
+      <div><span class="fw-500">${h.name}</span> <span class="text-xs text-muted">${h.type}</span></div>
+      <span class="text-muted">⭐ ${h.rating}</span>
+    </div>`).join('');
+}
+
+/* ===== Hotels ===== */
+function renderHotelTable() {
+  const hotels = Store.getHotels();
+  document.getElementById('hotel-table').innerHTML = `
+    <thead><tr>
+      <th>房源名稱</th><th>類型</th><th>車站</th><th>距離</th><th>評分</th><th>房型數</th><th>操作</th>
+    </tr></thead>
+    <tbody>${hotels.map(h=>`
+      <tr>
+        <td class="fw-500">${h.name}</td>
+        <td><span class="badge badge-info">${h.type}</span></td>
+        <td>${Utils.getStationName(h.station)}</td>
+        <td>${h.stationDist} km</td>
+        <td>⭐ ${h.rating}</td>
+        <td>${(h.rooms||[]).length} 間</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-secondary" onclick="openHotelModal('${h.id}')">編輯</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteHotel('${h.id}')">刪除</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>`;
+}
+
+function openHotelModal(id) {
+  editingHotelId = id || null;
+  const isEdit = !!id;
+  document.getElementById('hotel-modal-title').textContent = isEdit ? '編輯房源' : '新增房源';
+  if (isEdit) {
+    const h = Store.getHotels().find(x=>x.id===id);
+    if (!h) return;
+    document.getElementById('hm-id').value       = h.id;
+    document.getElementById('hm-name').value     = h.name;
+    document.getElementById('hm-station').value  = h.station;
+    document.getElementById('hm-type').value     = h.type;
+    document.getElementById('hm-dist').value     = h.stationDist;
+    document.getElementById('hm-rating').value   = h.rating;
+    document.getElementById('hm-amenities').value= (h.amenities||[]).join(',');
+    document.getElementById('hm-desc').value     = h.desc||'';
+    document.getElementById('hm-policy').value   = h.policies||'';
+  } else {
+    ['hm-name','hm-dist','hm-rating','hm-amenities','hm-desc','hm-policy'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('hm-id').value='';
+  }
+  openModal('modal-hotel');
+}
+
+function saveHotel() {
+  const name     = document.getElementById('hm-name').value.trim();
+  const station  = document.getElementById('hm-station').value;
+  const type     = document.getElementById('hm-type').value;
+  const dist     = parseFloat(document.getElementById('hm-dist').value)||0;
+  const rating   = parseFloat(document.getElementById('hm-rating').value)||4.0;
+  const amenities= document.getElementById('hm-amenities').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const desc     = document.getElementById('hm-desc').value.trim();
+  const policies = document.getElementById('hm-policy').value.trim();
+  if (!name || !station) { showToast('請填寫必填欄位','error'); return; }
+
+  if (editingHotelId) {
+    Store.updateHotel(editingHotelId, { name, station, type, stationDist:dist, rating, amenities, desc, policies,
+      priceMin: Store.getHotels().find(h=>h.id===editingHotelId)?.priceMin || 0,
+      priceMax: Store.getHotels().find(h=>h.id===editingHotelId)?.priceMax || 0,
+    });
+    showToast('房源已更新','success');
+  } else {
+    Store.addHotel({
+      id: Utils.genId('h'), name, station, type, stationDist:dist, rating, reviewCount:0,
+      amenities, desc, policies, priceMin:0, priceMax:0,
+      images:['https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80'],
+      rooms:[], reviews:[], chat:[],
+    });
+    showToast('房源已新增','success');
+  }
+  closeModal('modal-hotel');
+  renderHotelTable();
+}
+
+function deleteHotel(id) {
+  const h = Store.getHotels().find(x=>x.id===id);
+  if (!confirm(`確認刪除「${h?.name}」？`)) return;
+  Store.deleteHotel(id);
+  renderHotelTable();
+  showToast('已刪除','success');
+}
+
+/* ===== Orders ===== */
+function renderOrderTable() {
+  let orders = Store.getHousingOrders();
+  if (orderFilter !== '全部') orders = orders.filter(o=>o.status===orderFilter);
+  document.getElementById('order-table').innerHTML = `
+    <thead><tr>
+      <th>訂單 ID</th><th>房源</th><th>房型</th><th>入住</th><th>退房</th><th>金額</th><th>狀態</th><th>操作</th>
+    </tr></thead>
+    <tbody>${orders.length ? orders.map(o=>`
+      <tr>
+        <td class="text-xs text-muted">${o.id}</td>
+        <td class="fw-500">${o.hotelName}</td>
+        <td>${o.roomName}</td>
+        <td>${o.checkIn}</td>
+        <td>${o.checkOut}</td>
+        <td class="fw-600 text-primary">${Utils.formatCurrency(o.totalAmount)}</td>
+        <td><span class="badge ${STATUS_COLOR[o.status]||'badge-muted'}">${o.status}</span></td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-secondary" onclick="viewOrder('${o.id}')">詳情</button>
+          ${o.status==='取消中'?`<button class="btn btn-sm btn-danger" onclick="approveCancel('${o.id}')">確認退款</button>`:''}
+        </td>
+      </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">目前沒有符合的訂單</td></tr>'}
+    </tbody>`;
+}
+
+function viewOrder(id) {
+  const o = Store.getHousingOrders().find(x=>x.id===id);
+  if (!o) return;
+  document.getElementById('order-detail-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+      <div class="flex justify-between"><span class="text-muted">訂單編號</span><span class="fw-500 text-xs">${o.id}</span></div>
+      <div class="flex justify-between"><span class="text-muted">房源</span><span class="fw-500">${o.hotelName}</span></div>
+      <div class="flex justify-between"><span class="text-muted">房型</span><span>${o.roomName}</span></div>
+      <div class="flex justify-between"><span class="text-muted">入住</span><span>${o.checkIn}</span></div>
+      <div class="flex justify-between"><span class="text-muted">退房</span><span>${o.checkOut}</span></div>
+      <div class="flex justify-between"><span class="text-muted">人數</span><span>${o.guests} 人</span></div>
+      <div class="flex justify-between"><span class="text-muted">晚數</span><span>${o.nights} 晚</span></div>
+      <div class="divider" style="margin:4px 0;"></div>
+      <div class="flex justify-between fw-700"><span>總金額</span><span class="text-primary">${Utils.formatCurrency(o.totalAmount)}</span></div>
+      <div class="flex justify-between"><span class="text-muted">狀態</span><span class="badge ${STATUS_COLOR[o.status]||'badge-muted'}">${o.status}</span></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+      ${o.status==='已付款'?`<button class="btn btn-sm btn-success" onclick="updateOrder('${o.id}','已完成')">標記已完成</button>`:''}
+      ${o.status==='取消中'?`<button class="btn btn-sm btn-danger" onclick="approveCancel('${o.id}')">確認退款</button>`:''}
+    </div>`;
+  openModal('modal-order');
+}
+
+function updateOrder(id, status) {
+  Store.updateHousingOrder(id, { status });
+  closeModal('modal-order');
+  renderOrderTable();
+  showToast(`訂單已更新為「${status}」`,'success');
+}
+
+function approveCancel(id) {
+  if (!confirm('確認退款並取消此訂單？')) return;
+  Store.updateHousingOrder(id, { status:'已取消' });
+  closeModal('modal-order');
+  renderOrderTable();
+  showToast('已退款並取消訂單','success');
+}
+
+document.getElementById('order-filter-chips').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#order-filter-chips .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  orderFilter = chip.dataset.s;
+  renderOrderTable();
+});
+
+/* ===== Pricing ===== */
+function renderPricingSelects() {
+  const sel = document.getElementById('pricing-hotel-select');
+  sel.innerHTML = Store.getHotels().map(h=>`<option value="${h.id}">${h.name}</option>`).join('');
+  renderPricing();
+  const disc = Store.getDiscountSettings() || { earlyBirdDays:30, earlyBirdRate:90, packageNights:3, packageRate:85 };
+  document.getElementById('disc-earlybird-days').value = disc.earlyBirdDays;
+  document.getElementById('disc-earlybird-rate').value = disc.earlyBirdRate;
+  document.getElementById('disc-package-nights').value = disc.packageNights;
+  document.getElementById('disc-package-rate').value   = disc.packageRate;
+}
+
+function renderPricing() {
+  const id = document.getElementById('pricing-hotel-select').value;
+  const h  = Store.getHotels().find(x=>x.id===id);
+  if (!h) { document.getElementById('pricing-content').innerHTML=''; return; }
+  document.getElementById('pricing-content').innerHTML = `
+    <div class="card">
+      <div class="card-header"><span class="card-title">🏨 ${h.name} — 房型定價</span></div>
+      <div class="card-body" style="padding:0;">
+        <table class="admin-table">
+          <thead><tr><th>房型</th><th>容納人數</th><th>坪數</th><th>現有庫存</th><th>每晚定價（NT$）</th><th>儲存</th></tr></thead>
+          <tbody>${(h.rooms||[]).map(r=>`
+            <tr>
+              <td class="fw-500">${r.name}</td>
+              <td>${r.capacity} 人</td>
+              <td>${r.area} 坪</td>
+              <td>${r.available} 間</td>
+              <td><input class="form-control" type="number" id="price-${r.id}" value="${r.price}" min="0" style="width:120px;"></td>
+              <td><button class="btn btn-sm btn-primary" onclick="saveRoomPrice('${h.id}','${r.id}')">儲存</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        ${!(h.rooms||[]).length ? '<div class="text-sm text-muted" style="padding:16px;">此房源尚無房型資料</div>' : ''}
+      </div>
+    </div>`;
+}
+
+function saveRoomPrice(hotelId, roomId) {
+  const newPrice = parseInt(document.getElementById('price-'+roomId).value)||0;
+  const hotel = Store.getHotels().find(h=>h.id===hotelId);
+  if (!hotel) return;
+  const rooms = (hotel.rooms||[]).map(r=>r.id===roomId ? {...r, price:newPrice} : r);
+  const minP = Math.min(...rooms.map(r=>r.price));
+  const maxP = Math.max(...rooms.map(r=>r.price));
+  Store.updateHotel(hotelId, { rooms, priceMin:minP, priceMax:maxP });
+  showToast('定價已儲存','success');
+}
+
+function saveDiscounts() {
+  const settings = {
+    earlyBirdDays:  parseInt(document.getElementById('disc-earlybird-days').value)||30,
+    earlyBirdRate:  parseInt(document.getElementById('disc-earlybird-rate').value)||90,
+    packageNights:  parseInt(document.getElementById('disc-package-nights').value)||3,
+    packageRate:    parseInt(document.getElementById('disc-package-rate').value)||85,
+  };
+  Store.saveDiscountSettings(settings);
+  showToast('折扣設定已儲存','success');
+}
+
+renderOverview();
+</script>
+</body>
+</html>

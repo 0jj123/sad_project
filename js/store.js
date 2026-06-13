@@ -23,6 +23,16 @@ const Store = {
     if (!existingUsers || !Array.isArray(existingUsers) || existingUsers.some(u => !u.account)) {
       this._set('registered_users', Array.isArray(existingUsers) ? existingUsers.filter(u => u.account) : []);
     }
+    // 確保展示帳號與管理員存在
+    if (!this._get('initialized_v3')) {
+      this._set('hotels', HOTELS);
+      const demoUsers = [
+        ...USERS,
+        { id:'admin001', name:'平台管理者', account:'admin', password:'admin123', role:'admin', avatar:'管' },
+      ];
+      this._set('registered_users', demoUsers);
+      this._set('initialized_v3', true);
+    }
   },
 
   reset() {
@@ -32,6 +42,18 @@ const Store = {
   },
 
   /* Itineraries */
+  /* Hotels */
+  getHotels() { return this._get('hotels') || HOTELS; },
+  saveHotels(data) { this._set('hotels', data); },
+  addHotel(hotel) { const list = this.getHotels(); list.push(hotel); this.saveHotels(list); },
+  updateHotel(id, patch) {
+    const list = this.getHotels();
+    const idx = list.findIndex(h => h.id === id);
+    if (idx >= 0) list[idx] = { ...list[idx], ...patch };
+    this.saveHotels(list);
+  },
+  deleteHotel(id) { this.saveHotels(this.getHotels().filter(h => h.id !== id)); },
+
   getItineraries() { return this._get('itineraries') || []; },
   saveItineraries(data) { this._set('itineraries', data); },
   getItinerary(id) { return this.getItineraries().find(i => i.id === id) || null; },
@@ -124,6 +146,10 @@ const Store = {
   loginUser(account, password) {
     return this.getRegisteredUsers().find(u => u.account === account && u.password === password) || null;
   },
+
+  /* Discount Settings */
+  getDiscountSettings() { return this._get('discount_settings'); },
+  saveDiscountSettings(settings) { this._set('discount_settings', settings); },
 
   /* Ticket Purchase Count（滿5次贈30點，退票不計） */
   getTicketPurchaseCount() { return this._get('ticket_purchase_count') || 0; },
