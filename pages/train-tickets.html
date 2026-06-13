@@ -165,6 +165,21 @@
   </div>
 </div>
 
+<!-- Modal: 取票方式 -->
+<div class="modal-overlay" id="modal-pickup-method">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">選擇取票方式</span>
+      <button class="btn-icon" onclick="closeModal('modal-pickup-method')">✕</button>
+    </div>
+    <div class="modal-body" id="pickup-method-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-pickup-method')">取消</button>
+      <button class="btn btn-primary" onclick="confirmPickupMethod()">確認</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" class="toast-container"></div>
 <script src="../js/data.js"></script>
 <script src="../js/utils.js"></script>
@@ -176,8 +191,39 @@ updateNavUser();
 document.getElementById('nav-points').textContent = `⭐ ${Store.getPoints().toLocaleString()} 點`;
 
 const STATUS_COLOR = { '已付款':'badge-success','已使用':'badge-muted','已取消':'badge-muted','退票中':'badge-danger' };
+const PICKUP_ICONS = { '電子票':'📱', '超商取票':'🏪', '車站現場':'🏢' };
 let filterStatus = '全部';
 let activeTicketId = null;
+
+function showPickupMethod(ticketId) {
+  activeTicketId = ticketId;
+  const t = Store.getTrainTickets().find(t=>t.id===ticketId);
+  const current = t?.pickupMethod || '電子票';
+  document.getElementById('pickup-method-body').innerHTML = `
+    <p class="text-sm text-muted mb-4">選擇您希望的取票方式，可隨時在發車前更改。</p>
+    ${['電子票','超商取票','車站現場'].map(m=>`
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:14px;border:1.5px solid ${m===current?'var(--primary)':'var(--border)'};border-radius:var(--r-md);margin-bottom:10px;cursor:pointer;background:${m===current?'var(--primary-ghost)':'var(--surface)'};">
+        <input type="radio" name="pickup" value="${m}" ${m===current?'checked':''} style="margin-top:2px;">
+        <div>
+          <div class="fw-600">${PICKUP_ICONS[m]} ${m}</div>
+          <div class="text-xs text-muted mt-1">${{
+            '電子票':'手機出示 QR Code 直接進站，最方便',
+            '超商取票':'7-11 ibon 或全家 FamiPort 輸入取票碼列印',
+            '車站現場':'售票窗口或自動售票機，憑身份證取票'
+          }[m]}</div>
+        </div>
+      </label>`).join('')}`;
+  openModal('modal-pickup-method');
+}
+
+function confirmPickupMethod() {
+  const sel = document.querySelector('input[name="pickup"]:checked');
+  if (!sel) return;
+  Store.updateTrainTicket(activeTicketId, { pickupMethod: sel.value });
+  closeModal('modal-pickup-method');
+  renderTickets();
+  showToast(`取票方式已設為「${sel.value}」`, 'success');
+}
 
 function renderTickets() {
   let tickets = Store.getTrainTickets().filter(t=>t.userId===CURRENT_USER.id);
@@ -240,6 +286,7 @@ function renderTickets() {
       </div>
       <div class="ticket-footer">
         ${t.status==='已付款'?`<button class="btn btn-primary btn-sm" onclick="showQR('${t.id}')">📱 取票</button>`:''}
+        ${t.status==='已付款'?`<button class="btn btn-secondary btn-sm" onclick="showPickupMethod('${t.id}')">${PICKUP_ICONS[t.pickupMethod||'電子票']} ${t.pickupMethod||'電子票'}</button>`:''}
         ${canRefund?`<button class="btn btn-danger btn-sm" onclick="showRefund('${t.id}')">退票</button>`:''}
         ${canChange?`<button class="btn btn-secondary btn-sm" onclick="showChange('${t.id}')">改票</button>`:''}
         ${canTransfer?`<button class="btn btn-ghost btn-sm" onclick="showTransfer('${t.id}')">↗ 分票</button>`:''}
@@ -261,29 +308,64 @@ function renderTickets() {
 function showQR(ticketId) {
   const t = Store.getTrainTickets().find(t=>t.id===ticketId);
   if (!t) return;
-  // Check 30-min rule
   const depDt = new Date(`${t.date} ${t.dep}`);
   const minutesBefore = (depDt - new Date()) / 60000;
   const canPickup = minutesBefore <= 30 || t.date <= Utils.today();
+  const method = t.pickupMethod || '電子票';
+
+  let methodHtml = '';
+  if (method === '電子票') {
+    methodHtml = `
+      <div style="display:flex;justify-content:center;margin-bottom:16px;">
+        <div class="qr-wrap"><div class="qr-grid" id="qr-full-grid"></div></div>
+      </div>
+      <div class="text-xs text-muted" style="word-break:break-all;">${t.qrCode}</div>
+      ${canPickup?`<button class="btn btn-success btn-full mt-4" onclick="doPickup('${t.id}')">✓ 確認取票（啟用 QR Code）</button>`:''}`;
+  } else if (method === '超商取票') {
+    methodHtml = `
+      <div class="alert alert-info mb-4" style="text-align:left;">
+        <span class="alert-icon">🏪</span>
+        <span><strong>超商取票步驟</strong><br>
+        1. 前往 7-11 ibon 或全家 FamiPort 機台<br>
+        2. 選擇「台鐵取票」→ 輸入取票碼<br>
+        3. 列印後憑票進站</span>
+      </div>
+      <div style="background:var(--surface-warm);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;">
+        <div class="text-xs text-muted mb-1">取票碼</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:3px;color:var(--primary);">${t.qrCode.slice(-8).toUpperCase()}</div>
+      </div>
+      ${canPickup?`<button class="btn btn-success btn-full" onclick="doPickup('${t.id}')">✓ 確認已於超商取票完成</button>`:''}`;
+  } else {
+    methodHtml = `
+      <div class="alert alert-info mb-4" style="text-align:left;">
+        <span class="alert-icon">🏢</span>
+        <span><strong>車站現場取票步驟</strong><br>
+        1. 前往車站售票窗口或自動售票機<br>
+        2. 出示身份證或輸入訂單編號<br>
+        3. 取得實體票後憑票進站</span>
+      </div>
+      <div style="background:var(--surface-warm);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;">
+        <div class="text-xs text-muted mb-1">訂單編號</div>
+        <div style="font-size:15px;font-weight:700;color:var(--primary);word-break:break-all;">${t.qrCode}</div>
+      </div>
+      ${canPickup?`<button class="btn btn-success btn-full" onclick="doPickup('${t.id}')">✓ 確認已於車站現場取票完成</button>`:''}`;
+  }
+
   document.getElementById('qr-body').innerHTML = `
     <div style="margin-bottom:16px;">
       <div class="fw-700" style="font-size:16px;margin-bottom:4px;">${t.from} → ${t.to}</div>
       <div class="text-muted text-sm">${t.date} ${t.dep} ・ 車廂${t.seatCar}號${t.seatNo}</div>
+      <div class="text-xs mt-1" style="color:var(--primary);">${PICKUP_ICONS[method]} 取票方式：${method}</div>
     </div>
-    ${!canPickup?`<div class="alert alert-info mb-4"><span class="alert-icon">ℹ</span><span>取票時間：發車前 30 分鐘內方可取票。<br>距發車還有 ${Math.floor(minutesBefore/60)} 小時 ${Math.round(minutesBefore%60)} 分鐘。</span></div>`:''}
-    <div style="display:flex;justify-content:center;margin-bottom:16px;">
-      <div class="qr-wrap">
-        <div class="qr-grid" id="qr-full-grid"></div>
-      </div>
-    </div>
-    <div class="text-xs text-muted" style="word-break:break-all;">${t.qrCode}</div>
-    ${canPickup?`<button class="btn btn-success btn-full mt-4" onclick="doPickup('${t.id}')">✓ 確認取票（啟用一次性鎖定）</button>`:''}`;
+    ${!canPickup?`<div class="alert alert-warning mb-4"><span class="alert-icon">⏱</span><span>尚未到取票時間，距發車還有 ${Math.floor(minutesBefore/60)} 小時 ${Math.round(minutesBefore%60)} 分鐘。</span></div>`:''}
+    ${methodHtml}`;
 
-  const g = document.getElementById('qr-full-grid');
-  const p=[1,1,1,1,1,1,1,0,1,0,1,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,1,1,0,0,1,0,0,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,1,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,0,0,0,1,0,1,1,0,0,1,1,0,1,0,0,0,0,1,1,0,0,1,0,1,1];
-  g.style.display='grid'; g.style.gridTemplateColumns='repeat(10,14px)'; g.style.gap='2px';
-  g.innerHTML=p.map(b=>`<div style="width:14px;height:14px;background:${b?'#333':'transparent'};"></div>`).join('');
-
+  if (method === '電子票') {
+    const g = document.getElementById('qr-full-grid');
+    const p=[1,1,1,1,1,1,1,0,1,0,1,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,1,1,0,0,1,0,0,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,1,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,0,0,0,1,0,1,1,0,0,1,1,0,1,0,0,0,0,1,1,0,0,1,0,1,1];
+    g.style.display='grid'; g.style.gridTemplateColumns='repeat(10,14px)'; g.style.gap='2px';
+    g.innerHTML=p.map(b=>`<div style="width:14px;height:14px;background:${b?'#333':'transparent'};"></div>`).join('');
+  }
   openModal('modal-qr');
 }
 
