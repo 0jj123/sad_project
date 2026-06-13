@@ -119,8 +119,9 @@
           <select class="form-control" id="p-discount">
             <option value="1.0">無折扣（全票）</option>
             <option value="0.8">學生（8折）</option>
-            <option value="0.9">早鳥 30 天（9折）</option>
+            <option value="0.9" id="opt-earlybird">早鳥 30 天（9折）</option>
           </select>
+          <div class="text-xs mt-2" id="earlybird-note"></div>
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:20px;">
@@ -195,11 +196,43 @@ const fromName = Utils.getStationName(schedule?.from||'');
 const toName   = Utils.getStationName(schedule?.to||'');
 const price    = schedule?.price[ticketType] || schedule?.price.full || 0;
 
+const EARLY_BIRD_DAYS = 30; // 早鳥規定：需提前 N 天訂購
+
 let currentStep = 1;
 let selectedSeat = null;
 let selectedPay  = '信用卡';
 let lockStart = Date.now();
 let timerInterval;
+
+function daysUntilTravel() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const travel = new Date(travelDate); travel.setHours(0,0,0,0);
+  return Math.ceil((travel - today) / 86400000);
+}
+
+function updateEarlyBirdOption() {
+  const opt  = document.getElementById('opt-earlybird');
+  const note = document.getElementById('earlybird-note');
+  const sel  = document.getElementById('p-discount');
+  const diff = daysUntilTravel();
+  const eligible = diff >= EARLY_BIRD_DAYS;
+  opt.disabled = !eligible;
+  if (!eligible) {
+    opt.textContent = `早鳥 ${EARLY_BIRD_DAYS} 天（9折）— 不符合`;
+    if (sel.value === '0.9') sel.value = '1.0';
+    note.innerHTML = `<span style="color:var(--warning);">⚠ 早鳥優惠需提前 ${EARLY_BIRD_DAYS} 天訂購，出發日距今僅 ${diff} 天，條件不符</span>`;
+  } else {
+    opt.textContent = `早鳥 ${EARLY_BIRD_DAYS} 天（9折）`;
+    note.innerHTML = `<span style="color:#38a169;">✓ 符合早鳥優惠，出發日距今 ${diff} 天（需 ${EARLY_BIRD_DAYS} 天以上）</span>`;
+  }
+}
+
+function prefillPassenger() {
+  const nameEl  = document.getElementById('p-name');
+  const emailEl = document.getElementById('p-email');
+  if (!nameEl.value) nameEl.value  = CURRENT_USER.name  || '';
+  if (!emailEl.value) emailEl.value = CURRENT_USER.email || '';
+}
 
 // Render train info
 document.getElementById('train-info-card').innerHTML = `
@@ -296,6 +329,7 @@ function goStep(n) {
     dot.className = 'step' + (i<n?' done':i===n?' active':'');
   }
 
+  if (n===2) { prefillPassenger(); updateEarlyBirdOption(); }
   if (n===3) renderOrderSummary();
   if (n===4) { clearInterval(timerInterval); document.getElementById('timer-bar').style.display='none'; renderTicketPreview(); }
 }
