@@ -579,11 +579,24 @@ function addComment() {
 
 /* ======= Linked Orders ======= */
 function renderLinkedOrders() {
-  const tickets = Store.getTrainTickets().filter(t=>t.itineraryId===itinId);
-  const orders = Store.getHousingOrders().filter(o=>o.itineraryId===itinId);
+  // 計算行程日期範圍
+  const start = itin.startDate;
+  const endD = new Date(start);
+  endD.setDate(endD.getDate() + itin.days - 1);
+  const end = endD.toISOString().split('T')[0];
+
+  // 車票：乘車日落在行程範圍內
+  const tickets = Store.getTrainTickets().filter(t =>
+    t.status !== '已取消' && t.date >= start && t.date <= end
+  );
+  // 住宿：入住∼退房與行程範圍有交集
+  const orders = Store.getHousingOrders().filter(o =>
+    o.checkIn <= end && o.checkOut >= start
+  );
+
   let html = '';
   if (tickets.length) html += tickets.map(t=>`
-    <div class="flex items-center gap-3 py-2">
+    <div class="flex items-center gap-3 py-2" style="border-bottom:1px solid var(--border-light);">
       <span>🚂</span>
       <div class="flex-1">
         <div class="text-sm fw-500">${t.from}→${t.to} ${t.dep}</div>
@@ -592,7 +605,7 @@ function renderLinkedOrders() {
       <span class="badge badge-success">${Utils.formatCurrency(t.price)}</span>
     </div>`).join('');
   if (orders.length) html += orders.map(o=>`
-    <div class="flex items-center gap-3 py-2">
+    <div class="flex items-center gap-3 py-2" style="border-bottom:1px solid var(--border-light);">
       <span>🏨</span>
       <div class="flex-1">
         <div class="text-sm fw-500">${o.hotelName}</div>
@@ -600,7 +613,8 @@ function renderLinkedOrders() {
       </div>
       <span class="badge badge-success">${Utils.formatCurrency(o.totalAmount)}</span>
     </div>`).join('');
-  if (!html) html = '<div class="text-sm text-muted">尚無關聯訂單<br><span class="text-xs">從行程頁前往訂票/訂房後會自動關聯</span></div>';
+  if (!html) html = `<div class="text-sm text-muted">尚無關聯訂單<br><span class="text-xs">行程期間（${start} ~ ${end}）內的訂票與訂房將自動顯示於此</span></div>`;
+  else html += `<div class="text-xs text-muted mt-2">自動比對行程期間 ${start} ~ ${end}</div>`;
   document.getElementById('linked-orders').innerHTML = html;
 }
 
