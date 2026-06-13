@@ -41,6 +41,13 @@
         <input class="form-control" id="login-pw" type="password" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn btn-primary w-full" style="width:100%;margin-top:4px;" onclick="doLogin()">登入</button>
+      <div style="margin-top:16px;padding:12px 14px;background:#FDF0E0;border-radius:8px;border:1px solid #E8C9A0;">
+        <div style="font-size:11px;font-weight:700;color:#A0522D;margin-bottom:6px;letter-spacing:.03em;">📋 課程展示帳號</div>
+        <div style="font-size:12px;color:#5C3D1A;display:flex;flex-direction:column;gap:4px;line-height:1.6;">
+          <div>一般使用者：帳號 <code style="background:#fff;color:#7B4A1E;padding:1px 6px;border-radius:4px;border:1px solid #E8C9A0;">jj</code> 　密碼 <code style="background:#fff;color:#7B4A1E;padding:1px 6px;border-radius:4px;border:1px solid #E8C9A0;">jj1234</code></div>
+          <div>平台管理者：帳號 <code style="background:#fff;color:#7B4A1E;padding:1px 6px;border-radius:4px;border:1px solid #E8C9A0;">admin</code> 密碼 <code style="background:#fff;color:#7B4A1E;padding:1px 6px;border-radius:4px;border:1px solid #E8C9A0;">admin123</code></div>
+        </div>
+      </div>
     </div>
 
     <!-- 註冊 -->
@@ -95,10 +102,11 @@ function doLogin() {
   if (!account || !pw) { showToast('請填寫帳號與密碼', 'error'); return; }
   const user = Store.loginUser(account, pw);
   if (!user) { showToast('帳號或密碼錯誤', 'error'); return; }
-  const session = { id: user.id, name: user.name, account: user.account, avatar: user.avatar };
+  const session = { id: user.id, name: user.name, account: user.account, avatar: user.avatar, role: user.role || 'user' };
   Store.setSession(session);
   showToast(`歡迎回來，${user.name}！`, 'success');
-  setTimeout(() => { window.location.href = '../index.html'; }, 800);
+  const redirect = user.role === 'admin' ? 'admin.html' : '../index.html';
+  setTimeout(() => { window.location.href = redirect; }, 800);
 }
 
 function doRegister() {
