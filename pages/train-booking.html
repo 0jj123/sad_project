@@ -223,6 +223,7 @@ function updateEarlyBirdOption() {
     note.innerHTML = `<span style="color:var(--warning);">⚠ 早鳥優惠需提前 ${EARLY_BIRD_DAYS} 天訂購，出發日距今僅 ${diff} 天，條件不符</span>`;
   } else {
     opt.textContent = `早鳥 ${EARLY_BIRD_DAYS} 天（9折）`;
+    sel.value = '0.9';
     note.innerHTML = `<span style="color:#38a169;">✓ 符合早鳥優惠，出發日距今 ${diff} 天（需 ${EARLY_BIRD_DAYS} 天以上）</span>`;
   }
 }
