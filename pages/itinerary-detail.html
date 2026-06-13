@@ -14,6 +14,16 @@
 .expense-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);}
 .expense-row:last-child{border-bottom:none;}
 .split-result{background:var(--primary-ghost);border:1px solid var(--primary-light);border-radius:var(--r);padding:16px;margin-top:12px;}
+.suggest-wrap{position:relative;}
+.suggest-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--shadow-lg);z-index:999;max-height:220px;overflow-y:auto;margin-top:2px;display:none;}
+.suggest-dropdown.show{display:block;}
+.suggest-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background .15s;}
+.suggest-item:hover,.suggest-item.active{background:var(--primary-ghost);}
+.suggest-item-emoji{font-size:18px;flex-shrink:0;}
+.suggest-item-info{flex:1;min-width:0;}
+.suggest-item-name{font-size:14px;font-weight:600;color:var(--text);}
+.suggest-item-desc{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.suggest-item-meta{font-size:11px;color:var(--primary);flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -127,7 +137,10 @@
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div class="form-group">
           <label class="form-label">名稱 *</label>
-          <input class="form-control" id="item-name" placeholder="景點/餐廳/活動名稱">
+          <div class="suggest-wrap">
+            <input class="form-control" id="item-name" placeholder="景點/餐廳/活動名稱" autocomplete="off">
+            <div class="suggest-dropdown" id="suggest-dropdown"></div>
+          </div>
         </div>
         <div class="form-row form-row-2">
           <div class="form-group">
@@ -630,6 +643,65 @@ function populatePayerSelect() {
   document.getElementById('exp-payer').innerHTML = members.map(uid=>
     `<option value="${uid}">${Utils.getUserName(uid)}</option>`).join('');
 }
+
+/* ======= Attraction Autocomplete ======= */
+(function() {
+  const pool = ATTRACTIONS[itin.startStation] || [];
+  const input = document.getElementById('item-name');
+  const dropdown = document.getElementById('suggest-dropdown');
+  let activeIdx = -1;
+
+  function renderDropdown(items) {
+    if (!items.length) { dropdown.classList.remove('show'); return; }
+    dropdown.innerHTML = items.map((a, i) => `
+      <div class="suggest-item" data-idx="${i}" data-name="${a.name}" data-type="${a.type}">
+        <span class="suggest-item-emoji">${a.emoji||'📍'}</span>
+        <div class="suggest-item-info">
+          <div class="suggest-item-name">${a.name}</div>
+          <div class="suggest-item-desc">${a.desc}</div>
+        </div>
+        <span class="suggest-item-meta">${a.distance}</span>
+      </div>`).join('');
+    activeIdx = -1;
+    dropdown.classList.add('show');
+  }
+
+  function pickItem(name, type) {
+    input.value = name;
+    const typeMap = { '景點':'景點', '餐廳':'餐廳' };
+    const sel = document.getElementById('item-type');
+    if (typeMap[type]) sel.value = typeMap[type];
+    dropdown.classList.remove('show');
+  }
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    const matched = q ? pool.filter(a => a.name.includes(q) || a.desc.includes(q)) : pool;
+    renderDropdown(matched);
+  });
+
+  input.addEventListener('focus', () => {
+    if (!input.value.trim() && pool.length) renderDropdown(pool);
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = dropdown.querySelectorAll('.suggest-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx+1, items.length-1); items.forEach((el,i)=>el.classList.toggle('active',i===activeIdx)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx-1, 0); items.forEach((el,i)=>el.classList.toggle('active',i===activeIdx)); }
+    else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); const el = items[activeIdx]; pickItem(el.dataset.name, el.dataset.type); }
+    else if (e.key === 'Escape') dropdown.classList.remove('show');
+  });
+
+  dropdown.addEventListener('mousedown', e => {
+    const item = e.target.closest('.suggest-item');
+    if (item) pickItem(item.dataset.name, item.dataset.type);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.suggest-wrap')) dropdown.classList.remove('show');
+  });
+})();
 
 /* ======= Init ======= */
 renderHeader();
