@@ -2,10 +2,10 @@
 var CURRENT_USER = { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ' };
 
 const USERS = [
-  { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ' },
-  { id:'u002', name:'林小明',     email:'ming@example.com',        points:380,  avatar:'明' },
-  { id:'u003', name:'陳小華',     email:'hua@example.com',         points:680,  avatar:'華' },
-  { id:'u004', name:'王大偉',     email:'david@example.com',       points:120,  avatar:'偉' },
+  { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ', account:'jj',    password:'jj1234'   },
+  { id:'u002', name:'林小明',     email:'ming@example.com',        points:380,  avatar:'明', account:'ming',  password:'ming123'  },
+  { id:'u003', name:'陳小華',     email:'hua@example.com',         points:680,  avatar:'華', account:'hua',   password:'hua123'   },
+  { id:'u004', name:'王大偉',     email:'david@example.com',       points:120,  avatar:'偉', account:'david', password:'david123' },
 ];
 
 const ALL_STATIONS = [
@@ -174,6 +174,132 @@ const HOTELS = [
     ],
     reviews:[
       { user:'蔡依珊', rating:4, text:'騎腳踏車逛護城河很棒！', date:'2026-05-18' },
+    ],
+    chat:[],
+  },
+  /* ===== 造橋 ===== */
+  {
+    id:'h005', name:'造橋鄉居民宿', station:'s005', stationDist:0.5,
+    priceMin:1400, priceMax:2200, rating:4.5, reviewCount:68,
+    type:'民宿', amenities:['WiFi','早餐','停車場','腳踏車租借'],
+    images:['https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&q=80'],
+    desc:'靜謐田野中的溫馨民宿，提供客家風味早餐，適合放鬆身心的慢旅行。',
+    policies:'入住15:00，退房11:00。訂金50%，入住前7天免費取消。',
+    rooms:[
+      { id:'r009', name:'田園雙人房', capacity:2, beds:'1張雙人床', area:16, price:1400, available:4, imageEmoji:'🛏️' },
+      { id:'r010', name:'家庭四人房', capacity:4, beds:'2張雙人床', area:32, price:2200, available:2, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'吳雅婷', rating:5, text:'鄉下的寧靜讓人充電！早餐超好吃。', date:'2026-05-12' },
+      { user:'陳冠宇', rating:4, text:'環境清幽，老闆很親切。', date:'2026-04-30' },
+    ],
+    chat:[],
+  },
+  /* ===== 銅鑼 ===== */
+  {
+    id:'h006', name:'銅鑼花田驛棧', station:'s006', stationDist:0.6,
+    priceMin:1600, priceMax:2600, rating:4.6, reviewCount:92,
+    type:'民宿', amenities:['WiFi','早餐','停車場','觀景台'],
+    images:['https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&q=80'],
+    desc:'緊鄰銅鑼杭菊花田，每年秋季花開時節景色迷人，是拍照打卡熱點。',
+    policies:'入住15:00，退房11:00。旺季（10-11月）訂金不退。',
+    rooms:[
+      { id:'r011', name:'花田景觀房', capacity:2, beds:'1張雙人床', area:20, price:1600, available:3, imageEmoji:'🛏️' },
+      { id:'r012', name:'山居四人套房', capacity:4, beds:'1雙人+2單人', area:36, price:2600, available:2, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'劉欣怡', rating:5, text:'杭菊盛開時超美！一定要再來。', date:'2026-05-25' },
+      { user:'林建志', rating:4, text:'景色很棒，早餐豐盛。', date:'2026-05-08' },
+    ],
+    chat:[],
+  },
+  /* ===== 三義 ===== */
+  {
+    id:'h007', name:'三義木雕山莊', station:'s007', stationDist:0.8,
+    priceMin:2000, priceMax:3200, rating:4.7, reviewCount:148,
+    type:'民宿', amenities:['WiFi','早餐','停車場','木雕體驗'],
+    images:['https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800&q=80'],
+    desc:'以木雕藝術為主題的特色民宿，可預約木雕體驗課程，鄰近勝興車站與雲洞山。',
+    policies:'入住15:00，退房11:00。免費取消至入住前10天。',
+    rooms:[
+      { id:'r013', name:'木藝雙人房', capacity:2, beds:'1張雙人床', area:22, price:2000, available:4, imageEmoji:'🛏️' },
+      { id:'r014', name:'藝術套房', capacity:2, beds:'1張King Size床', area:35, price:3200, available:1, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'楊宗翰', rating:5, text:'木雕體驗超有趣！房間質感很高。', date:'2026-05-30' },
+      { user:'鄭雅如', rating:5, text:'勝興車站步行可達，早餐美味。', date:'2026-05-14' },
+      { user:'黃柏文', rating:4, text:'環境幽靜，很有特色。', date:'2026-04-28' },
+    ],
+    chat:[],
+  },
+  {
+    id:'h008', name:'三義老街文旅', station:'s007', stationDist:0.3,
+    priceMin:1500, priceMax:2200, rating:4.3, reviewCount:74,
+    type:'商旅', amenities:['WiFi','停車場','早餐'],
+    images:['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80'],
+    desc:'位於三義老街旁，逛街購物超方便，提供台式早餐。',
+    policies:'入住14:00，退房12:00。',
+    rooms:[
+      { id:'r015', name:'標準雙人房', capacity:2, beds:'1張雙人床', area:16, price:1500, available:5, imageEmoji:'🛏️' },
+      { id:'r016', name:'家庭三人房', capacity:3, beds:'1雙1單', area:24, price:2200, available:2, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'許淑婷', rating:4, text:'地點好，老街逛到腳軟！', date:'2026-05-22' },
+    ],
+    chat:[],
+  },
+  /* ===== 竹南 ===== */
+  {
+    id:'h009', name:'竹南海灣商旅', station:'s008', stationDist:0.2,
+    priceMin:1300, priceMax:2000, rating:4.2, reviewCount:83,
+    type:'商旅', amenities:['WiFi','停車場','早餐','健身房'],
+    images:['https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80'],
+    desc:'交通樞紐旁的現代商旅，竹南轉乘首選，設施完善、CP值高。',
+    policies:'入住14:00，退房12:00。',
+    rooms:[
+      { id:'r017', name:'單人商務房', capacity:1, beds:'1張單人床', area:12, price:1300, available:6, imageEmoji:'🛏️' },
+      { id:'r018', name:'標準雙人房', capacity:2, beds:'1張雙人床', area:18, price:2000, available:3, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'江明輝', rating:4, text:'轉車很方便，房間乾淨。', date:'2026-05-16' },
+      { user:'周雅惠', rating:4, text:'CP值高，早餐選擇不錯。', date:'2026-05-02' },
+    ],
+    chat:[],
+  },
+  /* ===== 頭份 ===== */
+  {
+    id:'h010', name:'頭份客家風情館', station:'s009', stationDist:0.7,
+    priceMin:1600, priceMax:2400, rating:4.5, reviewCount:105,
+    type:'民宿', amenities:['WiFi','早餐','停車場','客家文化體驗'],
+    images:['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80'],
+    desc:'以客家文化為主題，提供擂茶DIY與客家美食體驗，感受道地苗栗風情。',
+    policies:'入住15:00，退房11:00。訂金50%，免費取消至入住前7天。',
+    rooms:[
+      { id:'r019', name:'客家雙人房', capacity:2, beds:'1張雙人床', area:18, price:1600, available:4, imageEmoji:'🛏️' },
+      { id:'r020', name:'庭院四人房', capacity:4, beds:'2張雙人床', area:34, price:2400, available:2, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'徐志豪', rating:5, text:'擂茶DIY超有趣！客家早餐很豐盛。', date:'2026-06-01' },
+      { user:'廖美芳', rating:4, text:'充滿客家特色，環境舒適。', date:'2026-05-18' },
+    ],
+    chat:[],
+  },
+  /* ===== 後龍 ===== */
+  {
+    id:'h011', name:'後龍海風民宿', station:'s010', stationDist:1.0,
+    priceMin:1500, priceMax:2300, rating:4.4, reviewCount:89,
+    type:'民宿', amenities:['WiFi','早餐','停車場','衝浪課程','腳踏車租借'],
+    images:['https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80'],
+    desc:'靠近後龍海岸，可安排衝浪或海岸漫步，夕陽景色絕美，提供新鮮海味早餐。',
+    policies:'入住15:00，退房11:00。旺季（暑假）訂金不退。',
+    rooms:[
+      { id:'r021', name:'海景雙人房', capacity:2, beds:'1張雙人床', area:18, price:1500, available:4, imageEmoji:'🛏️' },
+      { id:'r022', name:'家庭套房', capacity:4, beds:'1雙人+2單人', area:38, price:2300, available:2, imageEmoji:'🛏️' },
+    ],
+    reviews:[
+      { user:'謝宇翔', rating:5, text:'夕陽超美！衝浪教練很專業。', date:'2026-06-03' },
+      { user:'陳靜宜', rating:4, text:'海鮮早餐新鮮好吃，環境放鬆。', date:'2026-05-20' },
+      { user:'王俊傑', rating:4, text:'騎腳踏車沿海岸線超享受。', date:'2026-05-05' },
     ],
     chat:[],
   },

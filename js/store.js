@@ -25,13 +25,17 @@ const Store = {
     }
     // 確保展示帳號與管理員存在
     if (!this._get('initialized_v3')) {
-      this._set('hotels', HOTELS);
       const demoUsers = [
         ...USERS,
         { id:'admin001', name:'平台管理者', account:'admin', password:'admin123', role:'admin', avatar:'管' },
       ];
       this._set('registered_users', demoUsers);
       this._set('initialized_v3', true);
+    }
+    // 補充各車站住宿資料
+    if (!this._get('initialized_v4')) {
+      this._set('hotels', HOTELS);
+      this._set('initialized_v4', true);
     }
   },
 
