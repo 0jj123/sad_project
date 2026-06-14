@@ -71,6 +71,29 @@ const Utils = {
     return ZHUZHUMIAO_IDS.includes(stationId);
   },
 
+  /* 判斷某個景點/地點名稱是否位於竹竹苗以外（用於新增項目時的區域警告） */
+  isOutsideZhuzhumiao(name) {
+    if (!name) return false;
+    const n = name.trim();
+    // 白名單：竹竹苗推薦景點與車站名稱，一律視為竹竹苗
+    const whitelist = new Set();
+    if (typeof ATTRACTIONS === 'object') {
+      Object.values(ATTRACTIONS).forEach(list =>
+        (list || []).forEach(a => whitelist.add(a.name)));
+    }
+    if (typeof ALL_STATIONS !== 'undefined') {
+      ALL_STATIONS.filter(s => s.region === '竹竹苗').forEach(s => whitelist.add(s.name));
+    }
+    if (whitelist.has(n)) return false;
+    // 黑名單：非竹竹苗縣市 / 大站關鍵字，名稱中含有則判定為區域外
+    const OTHER_REGION_KEYWORDS = [
+      '台北','臺北','新北','基隆','桃園','台中','臺中','台南','臺南',
+      '高雄','花蓮','台東','臺東','宜蘭','嘉義','彰化','南投','雲林',
+      '屏東','澎湖','金門','馬祖','日月潭','阿里山','墾丁','九份','淡水',
+    ];
+    return OTHER_REGION_KEYWORDS.some(kw => n.includes(kw));
+  },
+
   /* 判斷暫時訂單是否已過期（10分鐘鎖位） */
   isLockExpired(lockStartTime, lockMinutes = 10) {
     const now = Date.now();

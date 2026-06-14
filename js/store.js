@@ -166,6 +166,14 @@ const Store = {
   getDiscountSettings() { return this._get('discount_settings'); },
   saveDiscountSettings(settings) { this._set('discount_settings', settings); },
 
+  /* Price History（歷史定價紀錄） */
+  getPriceHistory() { return this._get('price_history') || []; },
+  addPriceHistory(record) {
+    const list = this.getPriceHistory();
+    list.unshift(record); // 最新在前
+    this._set('price_history', list);
+  },
+
   /* Ticket Purchase Count（滿5次贈30點，退票不計） */
   getTicketPurchaseCount() { return this._get('ticket_purchase_count') || 0; },
   incrementTicketPurchaseCount() {

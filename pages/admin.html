@@ -42,6 +42,7 @@
     <div class="admin-nav-item" onclick="showPanel('hotels')">🏨 房源管理</div>
     <div class="admin-nav-item" onclick="showPanel('orders')">📋 訂單管理</div>
     <div class="admin-nav-item" onclick="showPanel('pricing')">💰 定價與折扣</div>
+    <div class="admin-nav-item" onclick="showPanel('history')">📜 歷史定價</div>
   </div>
 
   <!-- Main Content -->
@@ -130,6 +131,19 @@
             <span>折扣設定為全平台套用，實際訂房時系統將自動計算最優惠方案。</span>
           </div>
           <button class="btn btn-primary mt-3" onclick="saveDiscounts()">儲存折扣設定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 歷史定價 -->
+    <div class="admin-panel" id="panel-history">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 class="fw-700" style="font-size:20px;">📜 歷史定價紀錄</h2>
+        <span class="text-sm text-muted">每次價格與折扣調整皆自動留存，避免價格被覆蓋後無法追蹤</span>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <table class="admin-table" id="history-table"></table>
         </div>
       </div>
     </div>
@@ -246,6 +260,7 @@ function showPanel(name) {
   if (name==='hotels')   renderHotelTable();
   if (name==='orders')   renderOrderTable();
   if (name==='pricing')  renderPricingSelects();
+  if (name==='history')  renderHistoryTable();
 }
 
 /* ===== Overview ===== */
@@ -467,26 +482,73 @@ function renderPricing() {
     </div>`;
 }
 
+function nowStr() {
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 function saveRoomPrice(hotelId, roomId) {
   const newPrice = parseInt(document.getElementById('price-'+roomId).value)||0;
   const hotel = Store.getHotels().find(h=>h.id===hotelId);
   if (!hotel) return;
+  const room = (hotel.rooms||[]).find(r=>r.id===roomId);
+  const oldPrice = room ? room.price : 0;
+  if (oldPrice === newPrice) { showToast('價格未變更','info'); return; }
+  const reason = prompt(`調整「${hotel.name} - ${room?.name}」每晚定價\n${oldPrice} → ${newPrice}\n\n請輸入修改原因：`, '價格調整');
+  if (reason === null) return; // 取消
   const rooms = (hotel.rooms||[]).map(r=>r.id===roomId ? {...r, price:newPrice} : r);
   const minP = Math.min(...rooms.map(r=>r.price));
   const maxP = Math.max(...rooms.map(r=>r.price));
   Store.updateHotel(hotelId, { rooms, priceMin:minP, priceMax:maxP });
-  showToast('定價已儲存','success');
+  Store.addPriceHistory({
+    hotelName: hotel.name, roomName: room?.name || '-', type: '房價',
+    oldValue: `NT$${oldPrice}`, newValue: `NT$${newPrice}`,
+    effective: '即日起', time: nowStr(), editor: session.name, reason: reason || '—',
+  });
+  showToast('定價已儲存，已記入歷史','success');
 }
 
 function saveDiscounts() {
+  const old = Store.getDiscountSettings() || { earlyBirdDays:30, earlyBirdRate:90, packageNights:3, packageRate:85 };
   const settings = {
     earlyBirdDays:  parseInt(document.getElementById('disc-earlybird-days').value)||30,
     earlyBirdRate:  parseInt(document.getElementById('disc-earlybird-rate').value)||90,
     packageNights:  parseInt(document.getElementById('disc-package-nights').value)||3,
     packageRate:    parseInt(document.getElementById('disc-package-rate').value)||85,
   };
+  const reason = prompt('儲存折扣設定\n\n請輸入修改原因：', '折扣規則調整');
+  if (reason === null) return;
   Store.saveDiscountSettings(settings);
-  showToast('折扣設定已儲存','success');
+  Store.addPriceHistory({
+    hotelName: '全平台', roomName: '—', type: '折扣規則',
+    oldValue: `早鳥${old.earlyBirdDays}天${old.earlyBirdRate}折／套裝${old.packageNights}晚${old.packageRate}折`,
+    newValue: `早鳥${settings.earlyBirdDays}天${settings.earlyBirdRate}折／套裝${settings.packageNights}晚${settings.packageRate}折`,
+    effective: '即日起', time: nowStr(), editor: session.name, reason: reason || '—',
+  });
+  showToast('折扣設定已儲存，已記入歷史','success');
+}
+
+/* ===== History ===== */
+function renderHistoryTable() {
+  const list = Store.getPriceHistory();
+  document.getElementById('history-table').innerHTML = `
+    <thead><tr>
+      <th>修改時間</th><th>房源</th><th>房型</th><th>類型</th><th>修改前</th><th>修改後</th><th>生效</th><th>修改人</th><th>原因</th>
+    </tr></thead>
+    <tbody>${list.length ? list.map(r=>`
+      <tr>
+        <td class="text-xs">${r.time}</td>
+        <td class="fw-500">${r.hotelName}</td>
+        <td>${r.roomName}</td>
+        <td><span class="badge ${r.type==='折扣規則'?'badge-info':'badge-success'}">${r.type}</span></td>
+        <td class="text-muted" style="text-decoration:line-through;">${r.oldValue}</td>
+        <td class="text-primary fw-600">${r.newValue}</td>
+        <td>${r.effective}</td>
+        <td>${r.editor}</td>
+        <td class="text-sm">${r.reason}</td>
+      </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px;">尚無定價異動紀錄</td></tr>'}
+    </tbody>`;
 }
 
 renderOverview();

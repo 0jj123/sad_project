@@ -421,10 +421,8 @@ function addItem() {
     note: document.getElementById('item-note').value.trim(),
     addedBy: CURRENT_USER.name,
   };
-  // Show region warning (mock: any item with "台北" gets warning)
-  if (name.includes('台北')||name.includes('台中')||name.includes('高雄')) {
-    document.getElementById('item-region-warn').classList.remove('hidden');
-  }
+  // 區域警告：加入非竹竹苗的景點時跳出提示（依名稱判斷區域）
+  const outside = Utils.isOutsideZhuzhumiao(name);
   if (!itin.days_items[currentDay]) itin.days_items[currentDay] = [];
   itin.days_items[currentDay].push(item);
   save();
@@ -433,7 +431,12 @@ function addItem() {
   document.getElementById('item-note').value='';
   document.getElementById('item-region-warn').classList.add('hidden');
   renderDayTabs();
-  showToast(`已新增「${name}」到 ${currentDay}`, 'success');
+  if (outside) {
+    showToast(`已新增「${name}」（提醒：此地點位於竹竹苗以外）`, 'info');
+    alert(`⚠️ 區域提醒\n\n「${name}」位於竹竹苗區域以外。\n仍可加入行程，但本平台建議以竹竹苗台鐵小站周邊為主。`);
+  } else {
+    showToast(`已新增「${name}」到 ${currentDay}`, 'success');
+  }
 }
 
 /* ======= Delete Item ======= */
