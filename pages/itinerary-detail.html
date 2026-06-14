@@ -354,7 +354,7 @@ function renderDayPanel(key) {
             <div class="text-sm text-muted" style="display:flex;gap:12px;flex-wrap:wrap;">
               <span>🕐 ${item.time}</span>
               <span>⏱ ${Utils.formatDuration(item.duration)}</span>
-              <span>新增者：${Utils.getUserName(item.addedBy)}</span>
+              <span>新增者：${item.addedBy || ''}</span>
             </div>
             ${item.note?`<div class="text-sm text-sub mt-2" style="background:var(--bg-alt);padding:6px 10px;border-radius:var(--r-sm);">📝 ${item.note}</div>`:''}
           </div>
@@ -419,7 +419,7 @@ function addItem() {
     time: document.getElementById('item-time').value,
     duration: parseInt(document.getElementById('item-duration').value)||60,
     note: document.getElementById('item-note').value.trim(),
-    addedBy: CURRENT_USER.id,
+    addedBy: CURRENT_USER.name,
   };
   // Show region warning (mock: any item with "台北" gets warning)
   if (name.includes('台北')||name.includes('台中')||name.includes('高雄')) {
