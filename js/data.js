@@ -1,8 +1,8 @@
 /* ===== Agent TT — Mock Data ===== */
-var CURRENT_USER = { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ' };
+var CURRENT_USER = { id:'u001', name:'陳小安', email:'an@example.com', points:1250, avatar:'安' };
 
 const USERS = [
-  { id:'u001', name:'張靖程 (JJ)', email:'justin941108@gmail.com', points:1250, avatar:'JJ', account:'jj',    password:'jj1234'   },
+  { id:'u001', name:'陳小安',     email:'an@example.com',          points:1250, avatar:'安', account:'jj',    password:'jj1234'   },
   { id:'u002', name:'林小明',     email:'ming@example.com',        points:380,  avatar:'明', account:'ming',  password:'ming123'  },
   { id:'u003', name:'陳小華',     email:'hua@example.com',         points:680,  avatar:'華', account:'hua',   password:'hua123'   },
   { id:'u004', name:'王大偉',     email:'david@example.com',       points:120,  avatar:'偉', account:'david', password:'david123' },
